@@ -1,24 +1,35 @@
 import FlipCardGame from '@/games/flip-card/FlipCardGame'
+import Holdem from '@/games/holdem/Holdem'
 import Link from 'next/link'
 import Recommendation from '@/components/Recommendation'
 import { games } from '@/games/index'
 import { notFound } from 'next/navigation'
 
-export default function GamePage({ params }: { params: { slug: string } }) {
-  const game = games.find((g) => g.slug === params.slug)
+export default async function GamePage({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = await params
+  const game = games.find((g) => g.slug === slug)
   if (!game) return notFound()
 
   return (
-    <div className="space-y-8">
-      <header className="flex items-center justify-between">
+    <div className='space-y-8'>
+      <header className='flex items-center justify-between'>
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">{game.emoji} {game.title}</h1>
-          <p className="text-slate-600">{game.description}</p>
+          <h1 className='text-2xl font-bold flex items-center gap-2'>
+            {game.emoji} {game.title}
+          </h1>
+          <p className='text-slate-600'>{game.description}</p>
         </div>
-        <Link href="/" className="btn">All Games</Link>
+        <Link href='/' className='btn'>
+          All Games
+        </Link>
       </header>
 
       {game.slug === 'flip-card' && <FlipCardGame />}
+      {game.slug === 'holdem' && <Holdem />}
 
       <Recommendation currentSlug={game.slug} />
     </div>
