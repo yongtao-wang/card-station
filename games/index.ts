@@ -21,7 +21,7 @@ export const games: GameMeta[] = [
   // },
   {
     slug: 'holdem',
-    title: 'Texas Hold\'em',
+    title: 'Texas Hold\'em VS Bot',
     description: 'A classic card game of skill and strategy.',
     emoji: '♠️',
   }

@@ -266,47 +266,176 @@ function compareHandValues(a: number[], b: number[]): number {
   return 0
 }
 
-const getBotAction = (
-  gameState: GameState,
-  botPlayer: Player
-): { action: PlayerAction; amount?: number } => {
-  const opponent = gameState.players.find((p) => p.id !== botPlayer.id)!
-  const callAmount = opponent.currentBet - botPlayer.currentBet
+// ---- 1) Simple preflop hand grouping ----
+function preflopGroup(a: Card, b: Card): number {
+  // 0 -> strongest, 5 -> weakest
+  const ranks = [
+    '2',
+    '3',
+    '4',
+    '5',
+    '6',
+    '7',
+    '8',
+    '9',
+    '10',
+    'J',
+    'Q',
+    'K',
+    'A',
+  ] as const
+  const v = (r: Rank) => ranks.indexOf(r)
+  const high = Math.max(v(a.rank), v(b.rank))
+  const low = Math.min(v(a.rank), v(b.rank))
+  const suited = a.suit === b.suit
+  const pair = a.rank === b.rank
+  const gap = high - low
 
-  // Simple bot strategy based on hand strength and pot odds
-  const handStrength = getBestHand(
-    botPlayer.cards,
-    gameState.communityCards
-  ).rank
-  const potOdds = callAmount / (gameState.pot + callAmount)
+  if (pair && v(a.rank) >= v('10')) return 0 // TT, JJ, QQ, KK, AA
+  if ((pair && v(a.rank) >= v('7')) || (suited && high >= v('Q') && gap <= 1))
+    return 1 // 77-99, QJs/KQs/AQs
+  if (
+    (suited && high >= v('10') && gap <= 2) ||
+    (high >= v('K') && low >= v('10'))
+  )
+    return 2 // TJs/QTs/KTo+
+  if (pair) return 3 // 22-66
+  if (suited && gap <= 3 && high >= v('9')) return 3 // 98s, T8s
+  if (high >= v('Q')) return 4 // Qx 杂花
+  return 5
+}
 
-  // Very basic AI - improve as needed
-  if (handStrength >= 3 || (handStrength >= 1 && potOdds < 0.3)) {
-    if (Math.random() < 0.3 && callAmount < botPlayer.chips) {
-      return {
-        action: 'raise',
-        amount: Math.min(callAmount * 2, botPlayer.chips),
-      }
+// ---- 2) Estimate postflop hand strength (quick approximation, not true equity) ----
+function postflopStrengthRank(my: Card[], board: Card[]): number {
+  return evaluateHand([...my, ...board]).rank // 0~9
+}
+
+// ---- 3) (Optional) Monte Carlo estimate of equity vs 1 opponent ----
+function estimateEquityVsOne(
+  my: Card[],
+  board: Card[],
+  unseen: Card[],
+  trials = 250
+): number {
+  if (board.length === 5) {
+    const myEval = getBestHand(my, board).rank
+    return myEval >= 0 ? 1 : 0.5
+  }
+
+  let win = 0,
+    tie = 0
+  for (let t = 0; t < trials; t++) {
+    const pool = [...unseen]
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[pool[i], pool[j]] = [pool[j], pool[i]]
+    }
+
+    const opp = [pool[0], pool[1]]
+    let simBoard = [...board]
+    let idx = 2
+
+    while (simBoard.length < 5) simBoard.push(pool[idx++])
+
+    const meHand = getBestHand(my, simBoard)
+    const opHand = getBestHand(opp, simBoard)
+    if (meHand.rank > opHand.rank) win++
+    else if (meHand.rank === opHand.rank) tie++
+  }
+  return (win + tie * 0.5) / trials
+}
+
+// ---- 4) Main strategy：compare equity with pot odds, and take action ----
+function chooseActionByEquity(
+  equity: number,
+  pot: number,
+  callAmount: number,
+  canCheck: boolean,
+  stacks: { my: number; opp: number },
+  minRaise: number
+): { action: PlayerAction; amount?: number } {
+  const potOdds = callAmount > 0 ? callAmount / (pot + callAmount) : 0
+  const margin = 0.05
+  const rnd = Math.random()
+
+  if (callAmount === 0) {
+    if (equity > 0.7 && stacks.my >= minRaise && rnd < 0.7) {
+      const bet = Math.max(minRaise, Math.min(stacks.my, Math.floor(pot * 0.5)))
+      return { action: 'raise', amount: bet }
+    }
+    return { action: 'check' }
+  }
+
+  if (equity > potOdds + margin) {
+    if (equity > 0.75 && stacks.my < 3 * callAmount && rnd < 0.3) {
+      return { action: 'allIn' }
+    }
+    const raiseTo = Math.max(
+      minRaise,
+      Math.min(stacks.my, Math.floor(callAmount * (2 + rnd)))
+    )
+    if (raiseTo >= minRaise && rnd < 0.5) {
+      return { action: 'raise', amount: raiseTo }
     }
     return { action: 'call' }
-  } else if (handStrength >= 1 && potOdds < 0.5) {
-    return { action: 'call' }
-  } else if (callAmount === 0) {
+  }
+
+  if (equity < potOdds - margin) {
+    return canCheck ? { action: 'check' } : { action: 'fold' }
+  }
+
+  if (rnd < 0.1 && !canCheck) return { action: 'fold' }
+  if (rnd < 0.2 && stacks.my >= minRaise)
+    return { action: 'raise', amount: minRaise }
+  return canCheck ? { action: 'check' } : { action: 'call' }
+}
+
+// ---- 5) Compose the replaceable getBotAction ----
+const getBotAction = (
+  gameState: GameState,
+  botPlayer: Player,
+  unseenCards?: Card[]
+): { action: PlayerAction; amount?: number } => {
+  const opponent = gameState.players.find((p) => p.id !== botPlayer.id)!
+  const callAmount = Math.max(0, opponent.currentBet - botPlayer.currentBet)
+  const canCheck = callAmount === 0
+  const pot = gameState.pot + callAmount
+  const minRaise = gameState.minRaise
+
+  let equity: number
+
+  if (gameState.phase === 'preflop') {
+    const g = preflopGroup(botPlayer.cards[0], botPlayer.cards[1]) // 0~5
+    const table = [0.63, 0.58, 0.54, 0.5, 0.46, 0.42]
+    equity = table[g]
+  } else if (gameState.phase === 'showdown' || gameState.phase === 'gameOver') {
     return { action: 'check' }
   } else {
-    return { action: 'fold' }
+    const rank = postflopStrengthRank(botPlayer.cards, gameState.communityCards) // 0~9
+    let approx = 0.3 + (rank / 9) * 0.5
+    const pool = unseenCards ?? []
+    const mc = pool.length
+      ? estimateEquityVsOne(
+          botPlayer.cards,
+          gameState.communityCards,
+          pool,
+          250
+        )
+      : approx
+    equity = approx * 0.4 + mc * 0.6
   }
+
+  return chooseActionByEquity(
+    equity,
+    gameState.pot,
+    callAmount,
+    canCheck,
+    { my: botPlayer.chips, opp: opponent.chips },
+    minRaise
+  )
 }
 
 export default function Holdem() {
-  const getChips = (key: string, defaultValue: number = 1000) => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem(key)
-      return stored ? parseInt(stored) : defaultValue
-    }
-    return defaultValue
-  }
-
   const [gameState, setGameState] = useState<GameState>({
     phase: 'preflop',
     pot: 0,
@@ -316,7 +445,7 @@ export default function Holdem() {
       {
         id: 'player',
         name: 'You',
-        chips: getChips('playerChips'),
+        chips: 1000,
         cards: [],
         currentBet: 0,
         hasActed: false,
@@ -326,7 +455,7 @@ export default function Holdem() {
       {
         id: 'bot',
         name: 'Bot',
-        chips: getChips('botChips'),
+        chips: 1000,
         cards: [],
         currentBet: 0,
         hasActed: false,
@@ -345,16 +474,40 @@ export default function Holdem() {
   const [deck, setDeck] = useState<Card[]>([])
   const [gameMessage, setGameMessage] = useState<string>('')
 
+  const player = gameState.players.find((p) => p.id === 'player')!
+  const bot = gameState.players.find((p) => p.id === 'bot')!
+  const opponent = gameState.players.find(
+    (p) => p.id !== gameState.currentPlayer
+  )!
+  const callAmount = Math.max(0, opponent.currentBet - player.currentBet)
+
+  // Load chips from local storage
+  useEffect(() => {
+    try {
+      const playerChips = localStorage.getItem('playerChips')
+      const botChips = localStorage.getItem('botChips')
+
+      if (playerChips && botChips) {
+        setGameState((prev) => ({
+          ...prev,
+          players: [
+            { ...prev.players[0], chips: parseInt(playerChips, 10) },
+            { ...prev.players[1], chips: parseInt(botChips, 10) },
+          ],
+        }))
+      }
+    } catch {}
+  }, [])
+
   // Reset chips for both players
   const resetChips = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('playerChips', '1000')
-      localStorage.setItem('botChips', '1000')
-    }
+    localStorage.setItem('playerChips', '1000')
+    localStorage.setItem('botChips', '1000')
     setGameState((prev) => {
       const players = prev.players.map((p) => ({
         ...p,
         chips: 1000,
+        currentBet: 0,
       }))
       return {
         ...prev,
@@ -365,14 +518,12 @@ export default function Holdem() {
 
   const initGame = () => {
     const newDeck = shuffleDeck(createDeck())
-    // Get chips from localStorage for both players
-    const playerChips = getChips('playerChips')
-    const botChips = getChips('botChips')
     const newPlayers: Player[] = [
       {
         id: 'player',
         name: 'You',
-        chips: playerChips,
+        chips:
+          gameState.players[0].chips > 0 ? gameState.players[0].chips : 1000,
         cards: [],
         currentBet: 0,
         hasActed: false,
@@ -382,7 +533,8 @@ export default function Holdem() {
       {
         id: 'bot',
         name: 'Bot',
-        chips: botChips,
+        chips:
+          gameState.players[1].chips > 0 ? gameState.players[1].chips : 1000,
         cards: [],
         currentBet: 0,
         hasActed: false,
@@ -420,10 +572,6 @@ export default function Holdem() {
 
     setDeck(newDeck.slice(4))
     setGameMessage('New hand started! Place your bets.')
-  }
-
-  const playHand = (player: Player) => {
-    // Implement the logic for playing a hand of poker
   }
 
   const dealCommunityCards = useCallback(
@@ -464,17 +612,33 @@ export default function Holdem() {
         )!
         const opponent = players.find((p) => p.id !== newState.currentPlayer)!
 
+        let actionMsg = ''
         switch (action) {
           case 'fold':
             currentPlayerObj.hasFolded = true
             newState.winner = opponent.id
             newState.phase = 'gameOver'
-            setGameMessage(
-              `${currentPlayerObj.name} folded. ${opponent.name} wins!`
-            )
+            // Award pot to winner immediately on fold
+            const winnerObj = players.find((p) => p.id === opponent.id)
+            if (winnerObj) {
+              winnerObj.chips += newState.pot
+              newState.pot = 0
+            }
+            // Save chips to localStorage
+            if (typeof window !== 'undefined') {
+              localStorage.setItem(
+                'playerChips',
+                String(newState.players[0].chips)
+              )
+              localStorage.setItem(
+                'botChips',
+                String(newState.players[1].chips)
+              )
+            }
+            actionMsg = `${currentPlayerObj.name} folded. ${opponent.name} wins!`
             break
 
-          case 'call':
+          case 'call': {
             const needed = Math.max(
               0,
               opponent.currentBet - currentPlayerObj.currentBet
@@ -484,20 +648,24 @@ export default function Holdem() {
             currentPlayerObj.chips -= callAmount
             newState.pot += callAmount
             if (currentPlayerObj.chips === 0) currentPlayerObj.isAllIn = true
+            actionMsg = `${currentPlayerObj.name} called for $${callAmount}.`
             break
+          }
 
-          case 'raise':
+          case 'raise': {
             if (amount && amount > 0) {
               const raiseAmount = Math.min(amount, currentPlayerObj.chips)
               currentPlayerObj.currentBet += raiseAmount
               currentPlayerObj.chips -= raiseAmount
               newState.pot += raiseAmount
               if (currentPlayerObj.chips === 0) currentPlayerObj.isAllIn = true
+              actionMsg = `${currentPlayerObj.name} raised to $${raiseAmount}.`
             }
             break
+          }
 
           case 'check':
-            // No action needed for check
+            actionMsg = `${currentPlayerObj.name} checked.`
             break
 
           case 'allIn':
@@ -505,10 +673,14 @@ export default function Holdem() {
             currentPlayerObj.currentBet += currentPlayerObj.chips
             currentPlayerObj.chips = 0
             currentPlayerObj.isAllIn = true
+            actionMsg = `${currentPlayerObj.name} went all in!`
             break
         }
 
         currentPlayerObj.hasActed = true
+
+        // Update game message for action
+        setGameMessage(actionMsg)
 
         // Check if betting round is complete
         const activePlayers = players.filter((p) => !p.hasFolded)
@@ -650,7 +822,7 @@ export default function Holdem() {
     ) {
       const timer = setTimeout(() => {
         const botPlayer = gameState.players.find((p) => p.id === 'bot')!
-        const botAction = getBotAction(gameState, botPlayer)
+        const botAction = getBotAction(gameState, botPlayer, deck)
 
         if (botAction.action === 'raise') {
           playerAction('raise', botAction.amount)
@@ -668,13 +840,6 @@ export default function Holdem() {
     initGame()
   }, [])
 
-  const player = gameState.players.find((p) => p.id === 'player')!
-  const bot = gameState.players.find((p) => p.id === 'bot')!
-  const opponent = gameState.players.find(
-    (p) => p.id !== gameState.currentPlayer
-  )!
-  const callAmount = Math.max(0, opponent.currentBet - player.currentBet)
-
   return (
     <div className='min-h-screen bg-green-800 p-4'>
       <div className='max-w-4xl mx-auto'>
@@ -686,7 +851,9 @@ export default function Holdem() {
         <div className='bg-green-700 rounded-lg p-4 mb-4 text-white text-center'>
           <p className='text-lg font-semibold'>Pot: ${gameState.pot}</p>
           <p className='text-sm'>Phase: {gameState.phase}</p>
-          {gameMessage && <p className='text-yellow-300 mt-2'>{gameMessage}</p>}
+          {gameMessage && (
+            <p className='text-yellow-300 mt-2 text-3xl'>{gameMessage}</p>
+          )}
         </div>
 
         {/* Community Cards */}
@@ -843,12 +1010,7 @@ export default function Holdem() {
           <div className='text-center flex justify-center gap-4'>
             <button
               onClick={initGame}
-              disabled={gameState.players.some((p) => p.chips === 0)}
-              className={`bg-lime-500 hover:bg-lime-6700 text-white px-8 py-3 rounded-lg font-semibold text-lg ${
-                gameState.players.some((p) => p.chips === 0)
-                  ? 'disabled:bg-gray-400 cursor-not-allowed'
-                  : ''
-              }`}
+              className='bg-lime-500 hover:bg-lime-6700 text-white px-8 py-3 rounded-lg font-semibold text-lg'
             >
               Deal New Hand
             </button>

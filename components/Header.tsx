@@ -9,8 +9,7 @@ export default function Header() {
         </Link>
         <nav className="flex items-center gap-4 text-sm">
           <Link href="/" className="link">Home</Link>
-          <Link href="/games/flip-card" className="link">Flip Card</Link>
-          <a className="link" href="https://nextjs.org" target="_blank" rel="noreferrer">About</a>
+          <Link href="/about" className="link">About</Link>
         </nav>
       </div>
     </header>
