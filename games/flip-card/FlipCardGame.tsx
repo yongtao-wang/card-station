@@ -23,7 +23,7 @@ function shuffle<T>(arr: T[]): T[] {
 const SYMBOL_IMAGE_COUNT = 30
 const SYMBOLS = Array.from(
   { length: SYMBOL_IMAGE_COUNT },
-  (_, i) => `/img/symbols/sprite_${i + 1}.png`
+  (_, i) => `/img/sprites/sprite_${i + 1}.png`
 )
 
 const STORAGE_KEY = 'flip-cardie:flip-card:history'

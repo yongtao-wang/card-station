@@ -12,16 +12,9 @@ export const games: GameMeta[] = [
     description: 'Match pairs in as few moves as possible.',
     emoji: '🃏',
   },
-  // {
-  //   slug: 'sheep-game',
-  //   title: 'Sheep Sheep',
-  //   description:
-  //     "Match 3 tiles in the dock to clear the board. Don't fill up the dock!",
-  //   emoji: '🀄️',
-  // },
   {
     slug: 'holdem',
-    title: 'Texas Hold\'em VS Bot',
+    title: "Texas Hold'em VS Bot",
     description: 'A classic card game of skill and strategy.',
     emoji: '♠️',
   },
@@ -30,5 +23,12 @@ export const games: GameMeta[] = [
     title: 'War Card Game',
     description: 'A simple card game where the highest card wins.',
     emoji: '⚔️',
-  }
+  },
+  {
+    slug: 'blackjack',
+    title: 'Blackjack',
+    description:
+      'Try to beat the dealer by getting as close to 21 as possible.',
+    emoji: '🃙',
+  },
 ]

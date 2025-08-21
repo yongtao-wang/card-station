@@ -97,6 +97,10 @@ function getCardSvgPath(card: Card): string {
   return `/img/cards/${rankMap[card.rank]}_of_${card.suit}.svg`
 }
 
+function getDeckPath(): string {
+  return '/img/cards/deck.svg'
+}
+
 export default function War() {
   const [playerDeck, setPlayerDeck] = useState<Card[]>([])
   const [botDeck, setBotDeck] = useState<Card[]>([])
@@ -201,7 +205,13 @@ export default function War() {
             <div
               className={`bg-gray-700 rounded-lg min-w-[${CARD_WIDTH_PX}]] min-h-[${CARD_HEIGHT_PX}] flex items-center justify-center text-white shadow-lg m-4`}
             >
-              <span className='text-lg'>Bot Deck</span>
+              <Image
+                src={getDeckPath()}
+                alt='Bot Deck'
+                width={CARD_WIDTH}
+                height={CARD_HEIGHT}
+                priority
+              />
             </div>
             <div className='flex flex-col text-left ml-8'>
               <p className='text-white text-3xl'>Bot</p>
@@ -441,7 +451,13 @@ export default function War() {
             <div
               className={`bg-gray-700 rounded-lg min-w-[${CARD_WIDTH_PX}]] min-h-[${CARD_HEIGHT_PX}] flex items-center justify-center text-white shadow-lg m-4`}
             >
-              <span className='text-lg'>Your Deck</span>
+              <Image
+                src={getDeckPath()}
+                alt='Your Deck'
+                width={CARD_WIDTH}
+                height={CARD_HEIGHT}
+                priority
+              />
             </div>
           </div>
         </div>
