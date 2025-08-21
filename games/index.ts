@@ -24,5 +24,11 @@ export const games: GameMeta[] = [
     title: 'Texas Hold\'em VS Bot',
     description: 'A classic card game of skill and strategy.',
     emoji: '♠️',
+  },
+  {
+    slug: 'war',
+    title: 'War Card Game',
+    description: 'A simple card game where the highest card wins.',
+    emoji: '⚔️',
   }
 ]

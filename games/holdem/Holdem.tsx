@@ -1,6 +1,10 @@
 'use client'
 
+import './holdem.css'
+
 import { useCallback, useEffect, useState } from 'react'
+
+import Image from 'next/image'
 
 // Card types
 type Suit = 'hearts' | 'diamonds' | 'clubs' | 'spades'
@@ -435,6 +439,26 @@ const getBotAction = (
   )
 }
 
+// Helper to get SVG path for a card
+const getCardSvgPath = (card: Card): string => {
+  const rankMap: Record<Rank, string> = {
+    A: 'ace',
+    K: 'king',
+    Q: 'queen',
+    J: 'jack',
+    '10': '10',
+    '9': '9',
+    '8': '8',
+    '7': '7',
+    '6': '6',
+    '5': '5',
+    '4': '4',
+    '3': '3',
+    '2': '2',
+  }
+  return `/img/cards/${rankMap[card.rank]}_of_${card.suit}.svg`
+}
+
 export default function Holdem() {
   const [gameState, setGameState] = useState<GameState>({
     phase: 'preflop',
@@ -844,7 +868,7 @@ export default function Holdem() {
     <div className='min-h-screen bg-green-800 p-4'>
       <div className='max-w-4xl mx-auto'>
         <h1 className='text-3xl font-bold text-white text-center mb-6'>
-          Texas Hold'em
+          Texas Hold&apos;em
         </h1>
 
         {/* Game Info */}
@@ -863,24 +887,22 @@ export default function Holdem() {
             {gameState.communityCards.map((card, index) => (
               <div
                 key={index}
-                className='bg-white rounded-lg p-3 shadow-lg min-w-[60px] min-h-[90px] flex items-center justify-center'
+                className='flip-card rounded-lg shadow-lg overflow-hidden'
               >
-                <div
-                  className={`text-2xl font-bold flex flex-col items-center justify-center w-full h-full ${
-                    card.suit === 'hearts' || card.suit === 'diamonds'
-                      ? 'text-red-500'
-                      : 'text-black'
-                  }`}
-                >
-                  <span>{card.rank}</span>
-                  <span className='mt-1'>{getSuitEmoji(card.suit)}</span>
-                </div>
+                <Image
+                  src={getCardSvgPath(card)}
+                  alt={`${card.rank} of ${card.suit}`}
+                  fill
+                  sizes='100vw'
+                  style={{ objectFit: 'cover' }}
+                  priority
+                />
               </div>
             ))}
             {[...Array(5 - gameState.communityCards.length)].map((_, index) => (
               <div
                 key={`empty-${index}`}
-                className='bg-gray-300 rounded-lg p-3 shadow-lg min-w-[60px] min-h-[90px] flex items-center justify-center'
+                className='flip-card bg-transparent border-2 rounded-lg shadow-lg'
               />
             ))}
           </div>
@@ -898,28 +920,35 @@ export default function Holdem() {
               {bot.cards.map((card, index) => (
                 <div
                   key={index}
-                  className={`rounded-lg p-3 min-w-[60px] min-h-[90px] flex items-center justify-center ${
+                  className={`flip-card overflow-hidden bg-transparent ${
                     gameState.phase === 'gameOver' ||
                     gameState.phase === 'showdown'
-                      ? 'bg-white shadow-lg'
-                      : 'bg-blue-600 text-white'
+                      ? 'flipped'
+                      : ''
                   }`}
                 >
-                  {gameState.phase === 'gameOver' ||
-                  gameState.phase === 'showdown' ? (
-                    <div
-                      className={`text-2xl font-bold flex flex-col items-center justify-center w-full h-full ${
-                        card.suit === 'hearts' || card.suit === 'diamonds'
-                          ? 'text-red-500'
-                          : 'text-black'
-                      }`}
-                    >
-                      <span>{card.rank}</span>
-                      <span className='mt-1'>{getSuitEmoji(card.suit)}</span>
+                  <div className='flip-card-inner '>
+                    <div className='flip-card-front'>
+                      <Image
+                        className='object-cover shadow-lg'
+                        src='/img/cards/card_back.jpg'
+                        alt='Card Back'
+                        fill
+                        sizes='100vw'
+                        priority
+                      />
                     </div>
-                  ) : (
-                    '?'
-                  )}
+                    <div className='flip-card-back'>
+                      <Image
+                        className='object-cover shadow-lg'
+                        src={getCardSvgPath(card)}
+                        alt={`${card.rank} of ${card.suit}`}
+                        fill
+                        sizes='100vw'
+                        priority
+                      />
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
@@ -936,20 +965,16 @@ export default function Holdem() {
             </div>
             <div className='flex space-x-2'>
               {player.cards.map((card, index) => (
-                <div
-                  key={index}
-                  className='bg-white rounded-lg p-3 shadow-lg min-w-[60px] min-h-[90px] flex items-center justify-center'
-                >
-                  <div
-                    className={`text-2xl font-bold flex flex-col items-center justify-center w-full h-full ${
-                      card.suit === 'hearts' || card.suit === 'diamonds'
-                        ? 'text-red-500'
-                        : 'text-black'
-                    }`}
-                  >
-                    <span>{card.rank}</span>
-                    <span className='mt-1'>{getSuitEmoji(card.suit)}</span>
-                  </div>
+                <div key={index} className='flip-card shadow-lg'>
+                  <Image
+                    className='flip-card-front'
+                    src={getCardSvgPath(card)}
+                    alt={`${card.rank} of ${card.suit}`}
+                    fill
+                    sizes='100vw'
+                    style={{ objectFit: 'cover' }}
+                    priority
+                  />
                 </div>
               ))}
             </div>
@@ -957,53 +982,61 @@ export default function Holdem() {
         </div>
 
         {/* Action Buttons */}
-        {gameState.currentPlayer === 'player' &&
-          gameState.phase !== 'gameOver' &&
-          gameState.phase !== 'showdown' && (
-            <div className='flex justify-center space-x-4 mb-4'>
+        {gameState.phase !== 'gameOver' && gameState.phase !== 'showdown' && (
+          <div className='flex justify-center space-x-4 mb-4'>
+            <button
+              onClick={() => playerAction('fold')}
+              disabled={gameState.currentPlayer !== 'player'}
+              className='bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-semibold'
+            >
+              Fold
+            </button>
+
+            {callAmount === 0 ? (
               <button
-                onClick={() => playerAction('fold')}
-                className='bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-semibold'
+                onClick={() => playerAction('check')}
+                disabled={gameState.currentPlayer !== 'player'}
+                className='bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-semibold'
               >
-                Fold
+                Check
               </button>
-
-              {callAmount === 0 ? (
-                <button
-                  onClick={() => playerAction('check')}
-                  className='bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-lg font-semibold'
-                >
-                  Check
-                </button>
-              ) : (
-                <button
-                  onClick={() => playerAction('call')}
-                  disabled={player.chips < callAmount}
-                  className='bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-semibold'
-                >
-                  Call ${callAmount}
-                </button>
-              )}
-
+            ) : (
               <button
-                onClick={() =>
-                  playerAction('raise', callAmount + gameState.minRaise)
+                onClick={() => playerAction('call')}
+                disabled={
+                  gameState.currentPlayer !== 'player' ||
+                  player.chips < callAmount
                 }
-                disabled={player.chips < callAmount + gameState.minRaise}
-                className='bg-purple-500 hover:bg-purple-600 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-semibold'
+                className='bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-semibold'
               >
-                Raise
+                Call ${callAmount}
               </button>
+            )}
 
-              <button
-                onClick={() => playerAction('allIn')}
-                disabled={player.chips === 0}
-                className='bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-semibold'
-              >
-                All In
-              </button>
-            </div>
-          )}
+            <button
+              onClick={() =>
+                playerAction('raise', callAmount + gameState.minRaise)
+              }
+              disabled={
+                gameState.currentPlayer !== 'player' ||
+                player.chips < callAmount + gameState.minRaise
+              }
+              className='bg-purple-500 hover:bg-purple-600 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-semibold'
+            >
+              Raise
+            </button>
+
+            <button
+              onClick={() => playerAction('allIn')}
+              disabled={
+                gameState.currentPlayer !== 'player' || player.chips === 0
+              }
+              className='bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-semibold'
+            >
+              All In
+            </button>
+          </div>
+        )}
 
         {/* New Hand Button */}
         {(gameState.phase === 'gameOver' || gameState.phase === 'showdown') && (
@@ -1035,6 +1068,69 @@ export default function Holdem() {
               </p>
             </div>
           )}
+
+        {/* Texas Hold'em Introduction & How to Play */}
+        <div className='mt-10 bg-white/80 rounded-lg p-6 max-w-3xl mx-auto shadow-lg text-gray-900'>
+          <h2 className='text-2xl font-bold mb-2'>
+            Texas Hold'em Poker: Rules & How to Play
+          </h2>
+          <p className='mb-4'>
+            Welcome to <strong>Texas Hold'em Poker</strong> – the world's most
+            popular poker game! Play online against our bot and learn the rules,
+            strategies, and tips for winning at Texas Hold'em. This game is
+            perfect for beginners and advanced players alike.
+          </p>
+          <h3 className='text-xl font-semibold mb-2'>
+            How to Play Texas Hold'em
+          </h3>
+          <ul className='list-disc ml-6 mb-4'>
+            <li>Each player is dealt two private cards (hole cards).</li>
+            <li>Five community cards are dealt face up in the center.</li>
+            <li>
+              Players use any combination of five cards to make the best poker
+              hand.
+            </li>
+            <li>Betting rounds: Preflop, Flop, Turn, River, and Showdown.</li>
+            <li>Actions: Fold, Check, Call, Raise, or go All-In.</li>
+            <li>
+              The winner is the player with the best hand at showdown, or the
+              last player remaining after all others fold.
+            </li>
+          </ul>
+          <h3 className='text-xl font-semibold mb-2'>
+            Chip Reset & Game Continuation
+          </h3>
+          <p className='mb-4'>
+            Both players will start again with 1000 chips. If you run out of
+            chips, you can reset the chips by clicking the{' '}
+            <span className='font-semibold text-red-600'>Reset Chips</span>{' '}
+            button. The bot will be automatically refilled to 1000 chips if it
+            runs out. You can continue playing without losing your progress.
+          </p>
+          <h3 className='text-xl font-semibold mb-2'>
+            About the Bot's Strategy
+          </h3>
+          <p className='mb-4'>
+            The bot you play against uses a simplified poker strategy based on
+            hand strength and probability. Before the flop, it groups hands by
+            strength and acts accordingly. After the flop, it estimates its
+            chances of winning using a <strong>Monte Carlo simulation</strong>:
+            it runs hundreds of random trials to simulate possible outcomes,
+            calculating its equity (chance to win) against your possible hand.
+            The bot then compares its equity to the pot odds and chooses actions
+            like fold, call, raise, or all-in, aiming to make mathematically
+            sound decisions.
+          </p>
+          <p className='mb-4'>
+            This approach makes the bot challenging and educational, giving you
+            a realistic poker experience while demonstrating how probability and
+            simulation can guide decision-making in games of chance.
+          </p>
+          <p className='text-sm text-gray-600'>
+            Enjoy this interactive Texas Hold'em Poker game and improve your
+            skills. Good luck at the tables!
+          </p>
+        </div>
       </div>
     </div>
   )

@@ -2,6 +2,7 @@ import FlipCardGame from '@/games/flip-card/FlipCardGame'
 import Holdem from '@/games/holdem/Holdem'
 import Link from 'next/link'
 import Recommendation from '@/components/Recommendation'
+import War from '@/games/war/War'
 import { games } from '@/games/index'
 import { notFound } from 'next/navigation'
 
@@ -30,6 +31,7 @@ export default async function GamePage({
 
       {game.slug === 'flip-card' && <FlipCardGame />}
       {game.slug === 'holdem' && <Holdem />}
+      {game.slug === 'war' && <War />}
 
       <Recommendation currentSlug={game.slug} />
     </div>
