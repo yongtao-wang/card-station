@@ -1,0 +1,61 @@
+:root {
+  --card-w: 96px;      /* must match CARD_WIDTH */
+  --col-gap: 32px;     /* Tailwind gap-8 = 2rem = 32px */
+}
+
+/* Flip effect for hidden card */
+.flip-card-container {
+  perspective: 800px;
+  width: 96px;
+  height: 144px;
+}
+.flip-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.4s ease;
+  transform-style: preserve-3d;
+  transform: rotateY(180deg);
+}
+.flipped .flip-card-inner {
+  transform: rotateY(0deg);
+}
+
+/* Disable flip transition for one frame when resetting to back */
+.no-flip-transition .flip-card-inner {
+  transition: none !important;
+}
+
+.flip-card-front, .flip-card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.flip-card-back {
+  transform: rotateY(180deg);
+}
+
+/* Fly away animation for previous flipped card */
+.fly-left {
+  animation: flyLeft 0.7s forwards;
+}
+@keyframes flyLeft {
+  0% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+  80% { opacity: 0.7; transform: translate3d(calc(-0.5 * (var(--card-w) + var(--col-gap))), 0, 0) scale(0.8); }
+  100% { opacity: 0; transform: translate3d(calc(-1 * (var(--card-w) + var(--col-gap))), 0, 0) scale(0.5); }
+}
+
+/* Move new card to flipped card position */
+.move-to-flipped {
+  animation: moveToFlipped 0.7s forwards;
+}
+@keyframes moveToFlipped {
+  0%   { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+  100% { opacity: 1;   transform: translate3d(calc(-1 * (var(--card-w) + var(--col-gap))), 0, 0) scale(1); }
+}

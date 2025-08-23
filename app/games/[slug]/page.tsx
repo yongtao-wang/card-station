@@ -1,5 +1,6 @@
 import BlackJack from '@/games/blackjack/BlackJack'
 import FlipCardGame from '@/games/flip-card/FlipCardGame'
+import HighLow from '@/games/highlow/HighLow'
 import Holdem from '@/games/holdem/Holdem'
 import Link from 'next/link'
 import Recommendation from '@/components/Recommendation'
@@ -34,6 +35,7 @@ export default async function GamePage({
       {game.slug === 'holdem' && <Holdem />}
       {game.slug === 'war' && <War />}
       {game.slug === 'blackjack' && <BlackJack />}
+      {game.slug === 'highlow' && <HighLow />}
 
       <Recommendation currentSlug={game.slug} />
     </div>

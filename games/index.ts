@@ -31,4 +31,10 @@ export const games: GameMeta[] = [
       'Try to beat the dealer by getting as close to 21 as possible.',
     emoji: '🃙',
   },
+  {
+    slug: 'highlow',
+    title: 'High Low',
+    description: 'Guess if the next card will be higher or lower.',
+    emoji: '🔼🔽',
+  }
 ]
