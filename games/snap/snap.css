@@ -132,3 +132,51 @@
   color: rgb(209 213 219);
   font-size: 0.875rem;
 }
+
+/* Snap Badge Styles */
+.snap-badge {
+  position: absolute;
+  z-index: 10;
+  animation: snapBadgeShow 2s forwards;
+}
+
+.snap-badge-bot {
+  top: -20px;
+  right: -20px;
+}
+
+.snap-badge-player {
+  top: -20px;
+  right: -20px;
+}
+
+.snap-badge-image {
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
+@keyframes snapBadgeShow {
+  0% {
+    transform: scale(0) rotate(-45deg);
+    opacity: 0;
+  }
+  5% {
+    transform: scale(1.2) rotate(-10deg);
+    opacity: 1;
+  }
+  10% {
+    transform: scale(0.9) rotate(5deg);
+    opacity: 1;
+  }
+  45% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  85% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.8) rotate(0deg);
+    opacity: 0;
+  }
+}

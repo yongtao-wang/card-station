@@ -9,6 +9,8 @@ import Image from 'next/image'
 const SUITS = ['hearts', 'diamonds', 'clubs', 'spades'] as const
 const RANKS = ['10', 'J', 'Q', 'K', 'A'] as const
 
+const SNAP_DELAY = 1200
+
 type Suit = (typeof SUITS)[number]
 type Rank = (typeof RANKS)[number]
 
@@ -74,6 +76,7 @@ export default function Snap() {
     cards: Card[]
   } | null>(null)
   const [snapInProgress, setSnapInProgress] = useState(false) // Lock to prevent race condition
+  const [showSnapBadge, setShowSnapBadge] = useState<number | null>(null) // Show snap badge for player index
 
   // Initialize game
   useEffect(() => {
@@ -90,6 +93,7 @@ export default function Snap() {
     setPlayerSlots([null, null])
     setAnimatingCard(null)
     setSnapInProgress(false) // Initialize lock as false
+    setShowSnapBadge(null) // Initialize snap badge
   }, [])
 
   // Check for matching cards (snap condition)
@@ -169,7 +173,7 @@ export default function Snap() {
         const nextPlayerName = playerIndex === 0 ? 'Bot' : 'You'
         setMessage(`${nextPlayerName}'s turn`)
       }
-    }, 0)
+    }, 200)
   }
 
   // Bot auto-play
@@ -214,7 +218,7 @@ export default function Snap() {
 
     // Determine the winner and collect all cards
     let winnerIndex: number
-    let allPiledCards: Card[] = [...centralPile]
+    let allPiledCards: Card[] = shuffleDeck([...centralPile])
     if (playerSlots[0]) allPiledCards.push(playerSlots[0])
     if (playerSlots[1]) allPiledCards.push(playerSlots[1])
 
@@ -231,6 +235,10 @@ export default function Snap() {
         ...newPlayers[playerIndex].deck,
       ]
       setMessage(`${newPlayers[playerIndex].name} wins the pile!`)
+      
+      // Show snap badge for successful snap
+      setShowSnapBadge(playerIndex)
+      setTimeout(() => setShowSnapBadge(null), SNAP_DELAY)
     } else {
       // Incorrect snap - other player gets all cards (add to back of deck)
       const otherPlayer = playerIndex === 0 ? 1 : 0
@@ -242,15 +250,17 @@ export default function Snap() {
       setMessage(`Wrong snap! ${newPlayers[otherPlayer].name} gets the pile!`)
     }
 
-    // Start snap animation
+    // Start snap animation after a delay to align with snap badge
     const slotsCards: Card[] = []
     if (playerSlots[0]) slotsCards.push(playerSlots[0])
     if (playerSlots[1]) slotsCards.push(playerSlots[1])
 
-    setSnapAnimation({
-      winnerIndex,
-      cards: slotsCards,
-    })
+    setTimeout(() => {
+      setSnapAnimation({
+        winnerIndex,
+        cards: slotsCards,
+      })
+    }, SNAP_DELAY)
 
     // Update game state immediately
     setPlayers(newPlayers)
@@ -285,6 +295,7 @@ export default function Snap() {
     setAnimatingCard(null)
     setSnapAnimation(null)
     setSnapInProgress(false) // Reset lock
+    setShowSnapBadge(null) // Reset snap badge
   }
 
   return (
@@ -366,6 +377,19 @@ export default function Snap() {
                     />
                   </div>
                 )}
+
+                {/* Snap Badge for Bot */}
+                {showSnapBadge === 1 && (
+                  <div className='snap-badge snap-badge-bot'>
+                    <Image
+                      src='/img/effects/snap.png'
+                      alt='SNAP!'
+                      width={60}
+                      height={60}
+                      className='snap-badge-image'
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
@@ -418,6 +442,19 @@ export default function Snap() {
                       width={80}
                       height={120}
                       className='card-image'
+                    />
+                  </div>
+                )}
+
+                {/* Snap Badge for Player */}
+                {showSnapBadge === 0 && (
+                  <div className='snap-badge snap-badge-player'>
+                    <Image
+                      src='/img/effects/snap.png'
+                      alt='SNAP!'
+                      width={60}
+                      height={60}
+                      className='snap-badge-image'
                     />
                   </div>
                 )}
