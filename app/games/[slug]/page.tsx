@@ -4,6 +4,7 @@ import HighLow from '@/games/highlow/HighLow'
 import Holdem from '@/games/holdem/Holdem'
 import Link from 'next/link'
 import Recommendation from '@/components/Recommendation'
+import Snap from '@/games/snap/Snap'
 import War from '@/games/war/War'
 import { games } from '@/games/index'
 import { notFound } from 'next/navigation'
@@ -36,6 +37,7 @@ export default async function GamePage({
       {game.slug === 'war' && <War />}
       {game.slug === 'blackjack' && <BlackJack />}
       {game.slug === 'highlow' && <HighLow />}
+      {game.slug === 'snap' && <Snap />}
 
       <Recommendation currentSlug={game.slug} />
     </div>

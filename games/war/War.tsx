@@ -359,7 +359,6 @@ export default function War() {
                     position: 'relative',
                   }}
                 >
-                  {/* Card back: SVG image */}
                   <div className='card-face card-back'>
                     <Image
                       src='/img/cards/card_back.jpg'
@@ -369,7 +368,6 @@ export default function War() {
                       priority
                     />
                   </div>
-                  {/* Card front: SVG */}
                   <div
                     className='card-face'
                     style={{
