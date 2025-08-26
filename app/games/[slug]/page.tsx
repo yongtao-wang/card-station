@@ -11,10 +11,8 @@ import { games } from '@/games/index'
 import { notFound } from 'next/navigation'
 import { site } from '@/lib/site'
 
-type PageParams = { slug: string }
-
 export async function generateMetadata(
-  { params }: { params: PageParams }
+  { params }: { params: { slug: string } }
 ): Promise<Metadata> {
   const { slug } = params
   const game = games.find(g => g.slug === slug)
@@ -36,7 +34,7 @@ export async function generateMetadata(
   }
 }
 
-export default async function GamePage({ params }: { params: PageParams }) {
+export default function GamePage({ params }: { params: { slug: string } }) {
   const { slug } = params
   const game = games.find((g) => g.slug === slug)
   if (!game) return notFound()
