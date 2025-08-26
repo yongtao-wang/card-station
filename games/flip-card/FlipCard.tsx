@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 
+import Image from 'next/image'
 import styles from './flipcard.module.css'
 
 export type Card = {
@@ -231,13 +232,15 @@ export default function FlipCard() {
               <div className={styles.cardFront}>
                 {/* Card back - shown when not flipped */}
               </div>
-              <div className={styles.cardBack}>
-                <img
+                <div className={styles.cardBack}>
+                <Image
                   src={c.symbol}
                   alt='Card symbol'
+                  width={80}
+                  height={80}
                   className='w-4/5 h-4/5 object-contain'
                 />
-              </div>
+                </div>
             </div>
           </button>
         ))}
