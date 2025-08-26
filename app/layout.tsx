@@ -5,8 +5,8 @@ import Header from '@/components/Header'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Flip Cardie — Mini Games',
-  description: 'A playful collection of flip-card themed mini games built with Next.js.',
+  title: 'Card Station — Mini Games',
+  description: 'A playful collection of card-themed mini games built with Next.js.',
   icons: [{ rel: 'icon', url: '/favicon.ico' }],
 }
 

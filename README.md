@@ -1,4 +1,4 @@
-# Flip Cardie
+# Card Station
 
 A playful collection of flip-card themed mini games built with Next.js and Tailwind CSS.
 
