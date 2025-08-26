@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 
 import Image from 'next/image'
+import styles from './blackjack.module.css'
 
 // Card types
 const SUITS = ['hearts', 'diamonds', 'clubs', 'spades'] as const
@@ -356,36 +357,34 @@ export default function BlackJack() {
           </p>
         </div>
         <div className='flex flex-col justify-center items-center mb-4'>
-          <div className='flex items-center m-2'>
-            <label className='font-semibold text-white mx-2'>Bet Amount:</label>
+          <div className={styles.betSection}>
+            <label className={styles.betLabel}>Bet Amount:</label>
             <input
               type='number'
               min='1'
               max={player?.chips ?? 1000}
               value={betAmount}
               onChange={(e) => setBetAmount(Number(e.target.value))}
-              className='px-2 py-1 rounded border'
+              className={styles.betInput}
             />
           </div>
-          <div className='flex items-center m-2'>
+          <div className={styles.controlPanel}>
             <button
               onClick={startHand}
-              className='bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold mx-2'
+              className={`${styles.button} ${styles.dealButton}`}
             >
               Deal
             </button>
             <button
               onClick={resetChips}
-              className='bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-semibold mx-2'
+              className={`${styles.button} ${styles.resetButton}`}
             >
               Reset Chips
             </button>
             <button
               onClick={() => setAutoPlayEnabled((v) => !v)}
-              className={`px-6 py-2 rounded-lg font-semibold mx-2 ${
-                autoPlayEnabled
-                  ? 'bg-green-600 hover:bg-green-700 text-white'
-                  : 'bg-gray-300 hover:bg-gray-400 text-gray-900'
+              className={`${styles.button} ${styles.autoPlayButton} ${
+                !autoPlayEnabled ? styles.disabled : ''
               }`}
               title='Toggle Auto Play (basic strategy)'
             >
@@ -395,17 +394,13 @@ export default function BlackJack() {
         </div>
         <div className='flex justify-between mb-8 min-h-[360px]'>
           {/* Player Hand */}
-          <div className='w-1/2'>
-            <h2 className='text-lg font-bold text-white mb-2'>
+          <div className={styles.handSection}>
+            <h2 className={styles.handTitle}>
               Your Hand ({calculateHandValue(player?.hand ?? [])})
             </h2>
-            <div className='flex flex-wrap gap-2'>
+            <div className={styles.playerHand}>
               {player?.hand.map((card, idx) => (
-                <div
-                  key={idx}
-                  className='flip-card bg-transparent rounded-lg shadow-lg overflow-hidden'
-                  style={{ width: 80, height: 120 }}
-                >
+                <div key={idx} className={styles.card}>
                   <Image
                     src={getCardSvgPath(card)}
                     alt={`${card.rank} of ${card.suit}`}
@@ -419,21 +414,17 @@ export default function BlackJack() {
             </div>
           </div>
           {/* Dealer Hand */}
-          <div className='w-1/2'>
-            <h2 className='text-lg font-bold text-white mb-2'>
+          <div className={styles.handSection}>
+            <h2 className={styles.handTitle}>
               Dealer (
               {phase === 'player'
                 ? '?'
                 : calculateHandValue(dealer?.hand ?? [])}
               )
             </h2>
-            <div className='flex flex-wrap gap-2'>
+            <div className={styles.dealerHand}>
               {dealer?.hand.map((card, idx) => (
-                <div
-                  key={idx}
-                  className='flip-card bg-transparent rounded-lg shadow-lg overflow-hidden'
-                  style={{ width: 80, height: 120 }}
-                >
+                <div key={idx} className={styles.card}>
                   <Image
                     src={getCardSvgPath(card)}
                     alt={`${card.rank} of ${card.suit}`}
@@ -449,16 +440,16 @@ export default function BlackJack() {
         </div>
         <div className='min-h-[60px]'>
           {phase === 'player' && (
-            <div className='flex justify-center space-x-4 mb-4'>
+            <div className={styles.controlPanel}>
               <button
                 onClick={hit}
-                className='bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-lg font-semibold'
+                className={`${styles.button} ${styles.hitButton}`}
               >
                 Hit
               </button>
               <button
                 onClick={stand}
-                className='bg-purple-500 hover:bg-purple-600 text-white px-6 py-2 rounded-lg font-semibold'
+                className={`${styles.button} ${styles.standButton}`}
               >
                 Stand
               </button>

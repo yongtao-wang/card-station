@@ -1,10 +1,9 @@
 'use client'
 
-import './warcard.css'
-
 import { useEffect, useState } from 'react'
 
 import Image from 'next/image'
+import styles from './warcard.module.css'
 
 // Card types
 type Suit = 'hearts' | 'diamonds' | 'clubs' | 'spades'
@@ -237,7 +236,7 @@ export default function War() {
             {/* Flip animation during animating */}
             {botCard && animating && (
               <div
-                className='card-fly-in'
+                className={styles.cardFlyIn}
                 style={{
                   position: 'absolute',
                   top: 0,
@@ -247,7 +246,7 @@ export default function War() {
                 }}
               >
                 <div
-                  className={`card-flip${revealed ? ' flipped' : ''}`}
+                  className={`${styles.cardFlip}${revealed ? ` ${styles.flipped}` : ''}`}
                   style={{
                     width: '100%',
                     height: '100%',
@@ -255,7 +254,7 @@ export default function War() {
                   }}
                 >
                   {/* Card back: JPG image */}
-                  <div className='card-face card-back'>
+                  <div className={`${styles.cardFace} ${styles.cardBack}`}>
                     <Image
                       src='/img/cards/card_back.jpg'
                       alt='Card Back'
@@ -266,9 +265,8 @@ export default function War() {
                   </div>
                   {/* Card front: SVG */}
                   <div
-                    className='card-face'
+                    className={`${styles.cardFace} ${styles.cardFront}`}
                     style={{
-                      transform: 'rotateY(180deg)',
                       borderRadius: '0.5rem',
                       background: 'white',
                       display: 'flex',
@@ -291,12 +289,9 @@ export default function War() {
             {/* Winner/loser highlight only after animation */}
             {botCard && revealed && !animating && (
               <div
-                className={`card-flip ${
+                className={`${styles.cardFlip} ${styles.flipped} ${
                   getCardValue(botCard.rank) > getCardValue(playerCard!.rank)
-                    ? 'card-winner'
-                    : getCardValue(botCard.rank) <
-                      getCardValue(playerCard!.rank)
-                    ? 'card-loser'
+                    ? styles.cardWinGlow
                     : ''
                 }`}
                 style={{
@@ -307,8 +302,17 @@ export default function War() {
                   left: 0,
                 }}
               >
+                <div className={`${styles.cardFace} ${styles.cardBack}`}>
+                  <Image
+                    src='/img/cards/card_back.jpg'
+                    alt='Card Back'
+                    width={CARD_WIDTH}
+                    height={CARD_HEIGHT}
+                    priority
+                  />
+                </div>
                 <div
-                  className='card-face'
+                  className={`${styles.cardFace} ${styles.cardFront}`}
                   style={{
                     width: '100%',
                     height: '100%',
@@ -342,7 +346,7 @@ export default function War() {
             {/* Flip animation during animating */}
             {playerCard && animating && (
               <div
-                className='card-fly-in-player'
+                className={styles.cardFlyInPlayer}
                 style={{
                   position: 'absolute',
                   top: 0,
@@ -352,14 +356,14 @@ export default function War() {
                 }}
               >
                 <div
-                  className={`card-flip${revealed ? ' flipped' : ''}`}
+                  className={`${styles.cardFlip}${revealed ? ` ${styles.flipped}` : ''}`}
                   style={{
                     width: '100%',
                     height: '100%',
                     position: 'relative',
                   }}
                 >
-                  <div className='card-face card-back'>
+                  <div className={`${styles.cardFace} ${styles.cardBack}`}>
                     <Image
                       src='/img/cards/card_back.jpg'
                       alt='Card Back'
@@ -369,7 +373,7 @@ export default function War() {
                     />
                   </div>
                   <div
-                    className='card-face'
+                    className={`${styles.cardFace} ${styles.cardFront}`}
                     style={{
                       transform: 'rotateY(180deg)',
                       width: '100%',
@@ -396,12 +400,9 @@ export default function War() {
             {/* Winner/loser highlight only after animation */}
             {playerCard && revealed && !animating && (
               <div
-                className={`card-flip ${
+                className={`${styles.cardFlip} ${styles.flipped} ${
                   getCardValue(playerCard.rank) > getCardValue(botCard!.rank)
-                    ? 'card-winner'
-                    : getCardValue(playerCard.rank) <
-                      getCardValue(botCard!.rank)
-                    ? 'card-loser'
+                    ? styles.cardWinGlow
                     : ''
                 }`}
                 style={{
@@ -412,8 +413,17 @@ export default function War() {
                   left: 0,
                 }}
               >
+                <div className={`${styles.cardFace} ${styles.cardBack}`}>
+                  <Image
+                    src='/img/cards/card_back.jpg'
+                    alt='Card Back'
+                    width={CARD_WIDTH}
+                    height={CARD_HEIGHT}
+                    priority
+                  />
+                </div>
                 <div
-                  className='card-face'
+                  className={`${styles.cardFace} ${styles.cardFront}`}
                   style={{
                     width: '100%',
                     height: '100%',

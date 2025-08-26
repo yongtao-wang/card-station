@@ -1,0 +1,139 @@
+/* Blackjack Game Styles */
+
+.card {
+  width: 80px;
+  height: 120px;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  background: transparent;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s ease;
+}
+
+/* Player hand area */
+.playerHand {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Dealer hand area */
+.dealerHand {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Hand section styling */
+.handSection {
+  width: 50%;
+}
+
+.handTitle {
+  font-size: 1.125rem;
+  font-weight: bold;
+  color: white;
+  margin-bottom: 0.5rem;
+}
+
+/* Game controls */
+.controlPanel {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.button {
+  padding: 0.5rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.button:hover {
+  transform: translateY(-1px);
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.hitButton {
+  background-color: #eab308;
+}
+
+.hitButton:hover:not(:disabled) {
+  background-color: #ca8a04;
+}
+
+.standButton {
+  background-color: #a855f7;
+}
+
+.standButton:hover:not(:disabled) {
+  background-color: #9333ea;
+}
+
+.dealButton {
+  background-color: #2563eb;
+}
+
+.dealButton:hover:not(:disabled) {
+  background-color: #1d4ed8;
+}
+
+.resetButton {
+  background-color: #dc2626;
+}
+
+.resetButton:hover:not(:disabled) {
+  background-color: #b91c1c;
+}
+
+.autoPlayButton {
+  background-color: #16a34a;
+}
+
+.autoPlayButton:hover:not(:disabled) {
+  background-color: #15803d;
+}
+
+.autoPlayButton.disabled {
+  background-color: #d1d5db;
+  color: #374151;
+}
+
+.autoPlayButton.disabled:hover {
+  background-color: #9ca3af;
+}
+
+/* Bet input styling */
+.betSection {
+  display: flex;
+  align-items: center;
+  margin: 0.5rem;
+}
+
+.betLabel {
+  font-weight: 600;
+  color: white;
+  margin: 0 0.5rem;
+}
+
+.betInput {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  border: 1px solid #d1d5db;
+}

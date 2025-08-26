@@ -1,10 +1,9 @@
 'use client'
 
-import './highlow.css'
-
 import { useEffect, useState } from 'react'
 
 import Image from 'next/image'
+import styles from './highlow.module.css'
 
 const SUITS = ['hearts', 'diamonds', 'clubs', 'spades'] as const
 const RANKS = [
@@ -166,7 +165,7 @@ export default function HighLow() {
                 src={getCardSvgPath(flippedCard)}
                 alt={`${flippedCard.rank} of ${flippedCard.suit}`}
                 className={`w-24 h-36 rounded shadow transition-all duration-500 ${
-                  isFlying ? 'fly-left' : ''
+                  isFlying ? styles.flyLeft : ''
                 }`}
                 width={CARD_WIDTH}
                 height={CARD_HEIGHT}
@@ -198,15 +197,15 @@ export default function HighLow() {
             <div className='relative w-24 h-36'>
               <div
                 key={`${hiddenCard?.suit}-${hiddenCard?.rank}-${score}`}
-                className={`flip-card-container ${
-                  disableFlipTransition ? 'no-flip-transition' : ''
-                } ${isFlipped ? 'flipped' : ''} ${
-                  isMoving ? 'move-to-flipped' : ''
+                className={`${styles.flipCardContainer} ${
+                  disableFlipTransition ? styles.noFlipTransition : ''
+                } ${isFlipped ? styles.flipped : ''} ${
+                  isMoving ? styles.slideFromRight : ''
                 }`}
                 style={{ position: 'absolute', left: 0, top: 0 }}
               >
-                <div className='flip-card-inner' key={flipNonce}>
-                  <div className='flip-card-front'>
+                <div className={styles.flipCardInner} key={flipNonce}>
+                  <div className={styles.flipCardFront}>
                     <Image
                       src={getCardSvgPath(hiddenCard)}
                       alt={`${hiddenCard.rank} of ${hiddenCard.suit}`}
@@ -215,7 +214,7 @@ export default function HighLow() {
                       height={CARD_HEIGHT}
                     />
                   </div>
-                  <div className='flip-card-back'>
+                  <div className={styles.flipCardBack}>
                     <Image
                       src={CARD_BACK}
                       alt='Hidden card'

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import Image from 'next/image'
+import styles from './holdem.module.css'
 
 // Card types
 type Suit = 'hearts' | 'diamonds' | 'clubs' | 'spades'
@@ -495,6 +496,7 @@ export default function Holdem() {
 
   const [deck, setDeck] = useState<Card[]>([])
   const [gameMessage, setGameMessage] = useState<string>('')
+  const [isAnimatingOut, setIsAnimatingOut] = useState(false)
 
   const player = gameState.players.find((p) => p.id === 'player')!
   const bot = gameState.players.find((p) => p.id === 'bot')!
@@ -539,61 +541,88 @@ export default function Holdem() {
   }
 
   const initGame = () => {
-    const newDeck = shuffleDeck(createDeck())
-    const newPlayers: Player[] = [
-      {
-        id: 'player',
-        name: 'You',
-        chips:
-          gameState.players[0].chips > 0 ? gameState.players[0].chips : 1000,
-        cards: [],
-        currentBet: 0,
-        hasActed: false,
-        hasFolded: false,
-        isAllIn: false,
-      },
-      {
-        id: 'bot',
-        name: 'Bot',
-        chips:
-          gameState.players[1].chips > 0 ? gameState.players[1].chips : 1000,
-        cards: [],
-        currentBet: 0,
-        hasActed: false,
-        hasFolded: false,
-        isAllIn: false,
-      },
-    ]
+    // First, trigger the card fly-out animation
+    setIsAnimatingOut(true)
 
-    // Deal hole cards
-    newPlayers[0].cards = [newDeck[0], newDeck[2]]
-    newPlayers[1].cards = [newDeck[1], newDeck[3]]
+    setTimeout(() => {
+      const newDeck = shuffleDeck(createDeck())
+      const newPlayers: Player[] = [
+        {
+          id: 'player',
+          name: 'You',
+          chips:
+            gameState.players[0].chips > 0 ? gameState.players[0].chips : 1000,
+          cards: [],
+          currentBet: 0,
+          hasActed: false,
+          hasFolded: false,
+          isAllIn: false,
+        },
+        {
+          id: 'bot',
+          name: 'Bot',
+          chips:
+            gameState.players[1].chips > 0 ? gameState.players[1].chips : 1000,
+          cards: [],
+          currentBet: 0,
+          hasActed: false,
+          hasFolded: false,
+          isAllIn: false,
+        },
+      ]
 
-    // Ensure both players have not acted yet
-    newPlayers.forEach((p) => (p.hasActed = false))
+      // Reset the game phase to hide bot cards and clear cards
+      setGameState((prev) => ({
+        ...prev,
+        phase: 'preflop',
+        pot: 0,
+        communityCards: [],
+        currentPlayer: prev.dealer,
+        players: newPlayers,
+        winner: null,
+        winningHand: null,
+      }))
 
-    // Set blinds
-    const smallBlindPlayer = newPlayers.find((p) => p.id === gameState.dealer)!
-    const bigBlindPlayer = newPlayers.find((p) => p.id !== gameState.dealer)!
+      // Reset animation state
+      setIsAnimatingOut(false)
 
-    smallBlindPlayer.currentBet = gameState.smallBlind
-    smallBlindPlayer.chips -= gameState.smallBlind
-    bigBlindPlayer.currentBet = gameState.bigBlind
-    bigBlindPlayer.chips -= gameState.bigBlind
+      // Small delay to ensure cards are face-down before dealing new ones
+      setTimeout(() => {
+        // Deal hole cards
+        newPlayers[0].cards = [newDeck[0], newDeck[2]]
+        newPlayers[1].cards = [newDeck[1], newDeck[3]]
 
-    setGameState((prev) => ({
-      ...prev,
-      phase: 'preflop',
-      pot: prev.smallBlind + prev.bigBlind,
-      communityCards: [],
-      currentPlayer: prev.dealer, // Small blind acts first pre-flop
-      players: newPlayers,
-      winner: null,
-      winningHand: null,
-    }))
+        // Ensure both players have not acted yet
+        newPlayers.forEach((p) => (p.hasActed = false))
 
-    setDeck(newDeck.slice(4))
-    setGameMessage('New hand started! Place your bets.')
+        // Set blinds
+        const smallBlindPlayer = newPlayers.find(
+          (p) => p.id === gameState.dealer
+        )!
+        const bigBlindPlayer = newPlayers.find(
+          (p) => p.id !== gameState.dealer
+        )!
+
+        smallBlindPlayer.currentBet = gameState.smallBlind
+        smallBlindPlayer.chips -= gameState.smallBlind
+        bigBlindPlayer.currentBet = gameState.bigBlind
+        bigBlindPlayer.chips -= gameState.bigBlind
+
+        setGameState((prev) => ({
+          ...prev,
+          phase: 'preflop',
+          pot: prev.smallBlind + prev.bigBlind,
+          communityCards: [],
+          currentPlayer: prev.dealer, // Small blind acts first pre-flop
+          players: newPlayers,
+          winner: null,
+          winningHand: null,
+        }))
+
+        setDeck(newDeck.slice(4))
+        setGameMessage('New hand started! Place your bets.')
+      }, 100) // Small delay to ensure proper card flip animation
+    }, 600) // Wait for fly-out animation to complete
   }
 
   const dealCommunityCards = useCallback(
@@ -885,7 +914,7 @@ export default function Holdem() {
             {gameState.communityCards.map((card, index) => (
               <div
                 key={index}
-                className='flip-card rounded-lg shadow-lg overflow-hidden'
+                className={`${styles.card} rounded-lg shadow-lg overflow-hidden`}
               >
                 <Image
                   src={getCardSvgPath(card)}
@@ -900,7 +929,7 @@ export default function Holdem() {
             {[...Array(5 - gameState.communityCards.length)].map((_, index) => (
               <div
                 key={`empty-${index}`}
-                className='flip-card bg-transparent border-2 rounded-lg shadow-lg'
+                className={`${styles.card} ${styles.empty} bg-transparent border-2 rounded-lg shadow-lg`}
               />
             ))}
           </div>
@@ -914,19 +943,19 @@ export default function Holdem() {
               <p>Chips: ${bot.chips}</p>
               <p>Current Bet: ${bot.currentBet}</p>
             </div>
-            <div className='flex space-x-2'>
+            <div className='flex space-x-2' style={{ height: '144px' }}>
               {bot.cards.map((card, index) => (
                 <div
                   key={index}
-                  className={`flip-card overflow-hidden bg-transparent ${
+                  className={`${styles.card} overflow-hidden bg-transparent ${
                     gameState.phase === 'gameOver' ||
                     gameState.phase === 'showdown'
-                      ? 'flipped'
+                      ? styles.flipped
                       : ''
-                  }`}
+                  } ${isAnimatingOut ? styles.flyOut : ''}`}
                 >
-                  <div className='flip-card-inner '>
-                    <div className='flip-card-front'>
+                  <div className={`${styles.cardInner}`}>
+                    <div className={styles.cardFront}>
                       <Image
                         className='object-cover shadow-lg'
                         src='/img/cards/card_back.jpg'
@@ -936,7 +965,7 @@ export default function Holdem() {
                         priority
                       />
                     </div>
-                    <div className='flip-card-back'>
+                    <div className={styles.cardBack}>
                       <Image
                         className='object-cover shadow-lg'
                         src={getCardSvgPath(card)}
@@ -961,11 +990,15 @@ export default function Holdem() {
               <p>Chips: ${player.chips}</p>
               <p>Current Bet: ${player.currentBet}</p>
             </div>
-            <div className='flex space-x-2'>
+            <div className='flex space-x-2' style={{ height: '144px' }}>
               {player.cards.map((card, index) => (
-                <div key={index} className='flip-card shadow-lg'>
+                <div
+                  key={index}
+                  className={`${styles.card} ${
+                    isAnimatingOut ? styles.flyOut : ''
+                  } shadow-lg`}
+                >
                   <Image
-                    className='flip-card-front'
                     src={getCardSvgPath(card)}
                     alt={`${card.rank} of ${card.suit}`}
                     fill

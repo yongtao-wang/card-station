@@ -1,5 +1,5 @@
 import BlackJack from '@/games/blackjack/BlackJack'
-import FlipCardGame from '@/games/flip-card/FlipCardGame'
+import FlipCard from '@/games/flip-card/FlipCard'
 import HighLow from '@/games/highlow/HighLow'
 import Holdem from '@/games/holdem/Holdem'
 import Link from 'next/link'
@@ -32,7 +32,7 @@ export default async function GamePage({
         </Link>
       </header>
 
-      {game.slug === 'flip-card' && <FlipCardGame />}
+      {game.slug === 'flip-card' && <FlipCard />}
       {game.slug === 'holdem' && <Holdem />}
       {game.slug === 'war' && <War />}
       {game.slug === 'blackjack' && <BlackJack />}

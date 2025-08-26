@@ -1,8 +1,8 @@
 'use client'
 
-import './flipcard.css'
-
 import { useEffect, useMemo, useRef, useState } from 'react'
+
+import styles from './flipcard.module.css'
 
 export type Card = {
   id: number
@@ -21,7 +21,7 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 const SYMBOL_IMAGE_COUNT = 30
-const SYMBOLS = Array.from(
+const SPRITES = Array.from(
   { length: SYMBOL_IMAGE_COUNT },
   (_, i) => `/img/sprites/sprite_${i + 1}.png`
 )
@@ -35,7 +35,7 @@ type HistoryEntry = {
   boardSize: number
 }
 
-export default function FlipCardGame() {
+export default function FlipCard() {
   const [size, setSize] = useState(4) // 4x4 default
   const pairCount = Math.floor((size * size) / 2)
   const [cards, setCards] = useState<Card[]>([])
@@ -58,7 +58,7 @@ export default function FlipCardGame() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const selected = shuffle(SYMBOLS).slice(0, pairCount)
+      const selected = shuffle(SPRITES).slice(0, pairCount)
       const deckSymbols = shuffle([...selected, ...selected])
       setNewDeck(
         deckSymbols.map((s, i) => ({
@@ -74,13 +74,24 @@ export default function FlipCardGame() {
 
   useEffect(() => {
     if (deckReady) {
-      reset()
+      initializeGame()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [size, newDeck, deckReady])
 
-  function reset() {
+  function initializeGame() {
     setCards(newDeck)
+    setFlippedIds([])
+    setMoves(0)
+    setIsFinished(false)
+    startTimeRef.current = Date.now()
+    setElapsed(0)
+  }
+
+  function newGame() {
+    const curDeck = [...newDeck]
+    const shuffledCurDeck = shuffle(curDeck)
+    setCards(shuffledCurDeck)
     setFlippedIds([])
     setMoves(0)
     setIsFinished(false)
@@ -118,7 +129,7 @@ export default function FlipCardGame() {
           setCards(reverted)
         }
         setFlippedIds([])
-      }, 600)
+      }, 800)
     }
   }
 
@@ -172,7 +183,7 @@ export default function FlipCardGame() {
     <div className='space-y-4'>
       <div className='card p-4 flex flex-wrap items-center gap-3 justify-between'>
         <div className='flex items-center gap-3'>
-          <label className='text-sm text-slate-700'>Board</label>
+          <label className='text-sm text-slate-700'>Board Size</label>
           <select
             className='rounded-lg border border-black/10 bg-white/80 px-3 py-2 shadow-sm'
             value={size}
@@ -184,7 +195,7 @@ export default function FlipCardGame() {
               </option>
             ))}
           </select>
-          <button className='btn' onClick={reset}>
+          <button className='btn' onClick={newGame}>
             New Game
           </button>
         </div>
@@ -206,32 +217,25 @@ export default function FlipCardGame() {
       <div
         className='grid gap-3 justify-center'
         style={{
-          gridTemplateColumns: `repeat(${size}, 120px)`,
+          gridTemplateColumns: `repeat(${size}, 100px)`,
         }}
       >
         {cards.map((c) => (
           <button
             key={c.id}
             onClick={() => onFlip(c)}
-            className={`flip-card cursor-pointer${
-              c.flipped || c.matched ? 'flipped' : ''
-            }`}
+            className={`${styles.card} ${c.flipped || c.matched ? styles.flipped : ''}`}
             aria-label={c.flipped ? `Card symbol ${c.symbol}` : 'Hidden card'}
           >
-            <div
-              className='flip-card-inner absolute inset-0 transition-transform duration-500 [transform-style:preserve-3d]'
-              style={{
-                transform: c.flipped || c.matched ? 'rotateY(180deg)' : '',
-              }}
-            >
-              <div className='flip-card-front rounded-xl shadow-md border border-black/2 bg-teal-400 w-full h-full'>
-                {/* Card back */}
+            <div className={styles.cardInner}>
+              <div className={styles.cardFront}>
+                {/* Card back - shown when not flipped */}
               </div>
-              <div className='flip-card-back rounded-xl shadow-md border border-black/3 w-full h-full flex items-center justify-center'>
+              <div className={styles.cardBack}>
                 <img
                   src={c.symbol}
                   alt='Card symbol'
-                  className='w-3/5 h-3/5 object-contain'
+                  className='w-4/5 h-4/5 object-contain'
                 />
               </div>
             </div>
@@ -241,9 +245,14 @@ export default function FlipCardGame() {
 
       {isFinished && (
         <div className='card p-4 border-emerald-300/40 ring-1 ring-emerald-300/30 bg-emerald-50'>
-          <div className='font-bold mb-1'>Nice! You matched them all 🎉</div>
-          <div className='text-sm text-slate-700'>
-            You finished in {moves} moves and {elapsed}s.
+          <div className='font-bold mb-1 text-emerald-800'>
+            🎉 Congratulations! You matched them all!
+          </div>
+          <div className='text-sm text-emerald-700'>
+            You finished in {moves} moves and {elapsed} seconds.
+            {best && best.moves === moves && best.seconds === elapsed && (
+              <span className='block font-semibold'>This is your best score!</span>
+            )}
           </div>
         </div>
       )}

@@ -1,10 +1,9 @@
 'use client'
 
-import './snap.css'
-
 import { useCallback, useEffect, useState } from 'react'
 
 import Image from 'next/image'
+import styles from './snap.module.css'
 
 const SUITS = ['hearts', 'diamonds', 'clubs', 'spades'] as const
 const RANKS = ['10', 'J', 'Q', 'K', 'A'] as const
@@ -184,17 +183,21 @@ export default function Snap() {
       players[1]?.deck.length > 0 &&
       !animatingCard
     ) {
+      // Longer delay if bot just won a snap, shorter delay for normal play
+      const wasSnapWinner = showSnapBadge === 1
+      const delay = wasSnapWinner ? 3000 : 1500 // 3 seconds after snap win, 1.5 seconds normally
+      
       const timer = setTimeout(() => {
         playCard()
-      }, 1500) // Bot plays after 1.5 seconds
+      }, delay)
       return () => clearTimeout(timer)
     }
-  }, [gameState, currentPlayer, players, animatingCard])
+  }, [gameState, currentPlayer, players, animatingCard, showSnapBadge])
 
   // Bot auto-snap with reaction time
   useEffect(() => {
     if (gameState === 'playing' && checkSlotsForSnap() && !snapInProgress) {
-      const botReactionTime = Math.random() * 1000 + 500 // 0.5-1.5 seconds
+      const botReactionTime = Math.random() * 1000 + 200 // 0.2-1.2 seconds
       const timer = setTimeout(() => {
         if (gameState === 'playing' && checkSlotsForSnap() && !snapInProgress) {
           handleSnap(1) // Bot wins the snap
@@ -321,23 +324,23 @@ export default function Snap() {
         </div>
 
         {/* Game Board */}
-        <div className='game-board'>
+        <div className={styles.gameBoard}>
           {/* Player Slots Side by Side */}
-          <div className='player-slots-container'>
+          <div className={styles.playerSlotsContainer}>
             {/* Bot Slot (Left) */}
-            <div className='player-slot'>
-              <div className='card-slot'>
+            <div className={styles.playerSlot}>
+              <div className={styles.cardSlot}>
                 {playerSlots[1] && !snapAnimation ? (
                   <Image
                     src={getCardSvgPath(playerSlots[1])}
                     alt={`${playerSlots[1].rank} of ${playerSlots[1].suit}`}
                     width={80}
                     height={120}
-                    className='card-image'
+                    className={styles.cardImage}
                   />
                 ) : !snapAnimation ? (
-                  <div className='empty-slot'>
-                    <span className='empty-slot-text'>Bot Slot</span>
+                  <div className={styles.emptySlot}>
+                    <span className={styles.emptySlotText}>Bot Slot</span>
                   </div>
                 ) : null}
 
@@ -345,7 +348,7 @@ export default function Snap() {
                 {animatingCard?.playerIndex === 1 &&
                   animatingCard?.stage === 'flyIn' && (
                     <div
-                      className='flying-card fly-in-from-deck-bot'
+                      className={`${styles.flyingCard} ${styles.flyInFromDeckBot}`}
                       onAnimationEnd={handleAnimationEnd}
                     >
                       <Image
@@ -353,7 +356,7 @@ export default function Snap() {
                         alt={`${animatingCard.card.rank} of ${animatingCard.card.suit}`}
                         width={80}
                         height={120}
-                        className='card-image'
+                        className={styles.cardImage}
                       />
                     </div>
                   )}
@@ -361,10 +364,10 @@ export default function Snap() {
                 {/* Snap Animation for Bot Slot */}
                 {snapAnimation && playerSlots[1] && (
                   <div
-                    className={`flying-card ${
+                    className={`${styles.flyingCard} ${
                       snapAnimation.winnerIndex === 1
-                        ? 'fly-to-bot'
-                        : 'fly-to-player'
+                        ? styles.flyToBot
+                        : styles.flyToPlayer
                     }`}
                     onAnimationEnd={handleSnapAnimationEnd}
                   >
@@ -373,20 +376,20 @@ export default function Snap() {
                       alt={`${playerSlots[1].rank} of ${playerSlots[1].suit}`}
                       width={80}
                       height={120}
-                      className='card-image'
+                      className={styles.cardImage}
                     />
                   </div>
                 )}
 
                 {/* Snap Badge for Bot */}
                 {showSnapBadge === 1 && (
-                  <div className='snap-badge snap-badge-bot'>
+                  <div className={`${styles.snapBadge} ${styles.snapBadgeShow}`}>
                     <Image
                       src='/img/effects/snap.png'
                       alt='SNAP!'
                       width={60}
                       height={60}
-                      className='snap-badge-image'
+                      className={styles.snapBadgeImage}
                     />
                   </div>
                 )}
@@ -394,19 +397,19 @@ export default function Snap() {
             </div>
 
             {/* Player Slot (Right) */}
-            <div className='player-slot'>
-              <div className='card-slot'>
+            <div className={styles.playerSlot}>
+              <div className={styles.cardSlot}>
                 {playerSlots[0] && !snapAnimation ? (
                   <Image
                     src={getCardSvgPath(playerSlots[0])}
                     alt={`${playerSlots[0].rank} of ${playerSlots[0].suit}`}
                     width={80}
                     height={120}
-                    className='card-image'
+                    className={styles.cardImage}
                   />
                 ) : !snapAnimation ? (
-                  <div className='empty-slot'>
-                    <span className='empty-slot-text'>Your Slot</span>
+                  <div className={styles.emptySlot}>
+                    <span className={styles.emptySlotText}>Your Slot</span>
                   </div>
                 ) : null}
 
@@ -414,7 +417,7 @@ export default function Snap() {
                 {animatingCard?.playerIndex === 0 &&
                   animatingCard?.stage === 'flyIn' && (
                     <div
-                      className='flying-card fly-in-from-deck'
+                      className={`${styles.flyingCard} ${styles.flyInFromDeck}`}
                       onAnimationEnd={handleAnimationEnd}
                     >
                       <Image
@@ -422,7 +425,7 @@ export default function Snap() {
                         alt={`${animatingCard.card.rank} of ${animatingCard.card.suit}`}
                         width={80}
                         height={120}
-                        className='card-image'
+                        className={styles.cardImage}
                       />
                     </div>
                   )}
@@ -430,10 +433,10 @@ export default function Snap() {
                 {/* Snap Animation for Player Slot */}
                 {snapAnimation && playerSlots[0] && (
                   <div
-                    className={`flying-card ${
+                    className={`${styles.flyingCard} ${
                       snapAnimation.winnerIndex === 0
-                        ? 'fly-to-player'
-                        : 'fly-to-bot'
+                        ? styles.flyToPlayer
+                        : styles.flyToBot
                     }`}
                   >
                     <Image
@@ -441,20 +444,20 @@ export default function Snap() {
                       alt={`${playerSlots[0].rank} of ${playerSlots[0].suit}`}
                       width={80}
                       height={120}
-                      className='card-image'
+                      className={styles.cardImage}
                     />
                   </div>
                 )}
 
                 {/* Snap Badge for Player */}
                 {showSnapBadge === 0 && (
-                  <div className='snap-badge snap-badge-player'>
+                  <div className={`${styles.snapBadge} ${styles.snapBadgeShow}`}>
                     <Image
                       src='/img/effects/snap.png'
                       alt='SNAP!'
                       width={60}
                       height={60}
-                      className='snap-badge-image'
+                      className={styles.snapBadgeImage}
                     />
                   </div>
                 )}

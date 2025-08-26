@@ -1,0 +1,304 @@
+/* Snap Card Game Animations and Styles */
+
+/* Game Layout */
+.gameBoard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.playerSlotsContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2rem;
+  margin: 1rem 0;
+}
+
+.playerSlot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cardSlot {
+  position: relative;
+  width: 80px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cardSlot::before {
+  content: '';
+  position: absolute;
+  width: 80px;
+  height: 116px;
+  border: 2px dashed #9ca3af;
+  border-radius: 8px;
+  background: rgba(156, 163, 175, 0.1);
+  z-index: 1;
+}
+
+.emptySlot {
+  width: 80px;
+  height: 120px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.emptySlotText {
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-align: center;
+  font-weight: 500;
+}
+
+.cardImage {
+  position: relative;
+  width: 80px;
+  height: 120px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+
+.flyingCard {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 80px;
+  height: 120px;
+  z-index: 10;
+}
+
+/* Animations */
+.flyInFromDeck {
+  animation: flyInFromDeck 0.3s ease-in-out forwards;
+}
+
+.flyInFromDeckBot {
+  animation: flyInFromDeckBot 0.3s ease-in-out forwards;
+}
+
+.flyToPlayer {
+  animation: flyToPlayer 0.4s ease-in-out forwards;
+}
+
+.flyToBot {
+  animation: flyToBot 0.4s ease-in-out forwards;
+}
+
+@keyframes flyInFromDeck {
+  from {
+    transform: translate(30px, -30px);
+    opacity: 0.7;
+  }
+
+  to {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes flyInFromDeckBot {
+  from {
+    transform: translate(-30px, -30px);
+    opacity: 0.7;
+  }
+
+  to {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes flyToPlayer {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 1;
+  }
+
+  to {
+    transform: translate(30px, -30px);
+    opacity: 0;
+  }
+}
+
+@keyframes flyToBot {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 1;
+  }
+
+  to {
+    transform: translate(-30px, -30px);
+    opacity: 0.5;
+  }
+}
+
+.snapBadge {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  transform: none;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.snapBadgeImage {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.snapBadgeShow {
+  animation: snapBadgeShow 2s ease-in-out forwards;
+}
+
+@keyframes snapBadgeShow {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) rotate(-10deg);
+  }
+
+  5% {
+    opacity: 1;
+    transform: scale(1.2) rotate(5deg);
+  }
+
+  10% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.cardDeck {
+  position: relative;
+  width: 80px;
+  height: 120px;
+  border-radius: 8px;
+  border: 2px dashed #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(148, 163, 184, 0.1);
+}
+
+.cardPosition {
+  position: absolute;
+  width: 80px;
+  height: 120px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.gameCard {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.snapWindow {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  backdrop-filter: blur(4px);
+}
+
+.snapPrompt {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  border: 3px solid #f59e0b;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  }
+
+  50% {
+    box-shadow: 0 8px 32px rgba(245, 158, 11, 0.3);
+  }
+}
+
+.snapButton {
+  background: #f59e0b;
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  font-size: 1.5rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.snapButton:hover {
+  background: #d97706;
+  transform: scale(1.05);
+}
+
+.snapButton:active {
+  transform: scale(0.95);
+}
+
+.playerArea {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 12px;
+  border: 2px solid rgba(59, 130, 246, 0.2);
+}
+
+.botArea {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 12px;
+  border: 2px solid rgba(239, 68, 68, 0.2);
+}
+
+.centerArea {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  padding: 2rem;
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: 12px;
+  border: 2px solid rgba(16, 185, 129, 0.2);
+  position: relative;
+  min-height: 200px;
+}
