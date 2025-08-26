@@ -3,18 +3,41 @@ import FlipCard from '@/games/flip-card/FlipCard'
 import HighLow from '@/games/highlow/HighLow'
 import Holdem from '@/games/holdem/Holdem'
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import Recommendation from '@/components/Recommendation'
 import Snap from '@/games/snap/Snap'
 import War from '@/games/war/War'
 import { games } from '@/games/index'
 import { notFound } from 'next/navigation'
+import { site } from '@/lib/site'
 
-export default async function GamePage({
-  params,
-}: {
-  params: Promise<{ slug: string }>
-}) {
-  const { slug } = await params
+type PageParams = { slug: string }
+
+export async function generateMetadata(
+  { params }: { params: PageParams }
+): Promise<Metadata> {
+  const { slug } = params
+  const game = games.find(g => g.slug === slug)
+  if (!game) return { title: 'Game Not Found' }
+  const title = `${game.title} — Play Free Online`
+  const description = game.description + ' Play it free on Card Station.'
+  const url = site.url ? `${site.url}/games/${game.slug}` : undefined
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      title,
+      description,
+      type: 'website',
+      url
+    },
+    twitter: { title, description }
+  }
+}
+
+export default async function GamePage({ params }: { params: PageParams }) {
+  const { slug } = params
   const game = games.find((g) => g.slug === slug)
   if (!game) return notFound()
 

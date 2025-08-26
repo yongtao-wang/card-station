@@ -9,6 +9,11 @@ A playful collection of flip-card themed mini games built with Next.js and Tailw
 - Pluggable mini-game structure under `games/`
 - Per-game localStorage history
 - Recommendation section
+- Dynamic metadata & sitemap for SEO
+
+## SEO
+
+Set `NEXT_PUBLIC_SITE_URL` in your environment (e.g. `.env.local`) to enable canonical URLs & structured data.
 
 ## Scripts
 

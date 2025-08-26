@@ -1,3 +1,10 @@
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'About Card Station — Free Online Card Games',
+  description: 'Learn about Card Station: free online card & memory mini games like Blackjack, Texas Hold\'em vs Bot, Flip Card, High Low & Snap. No signup, just play.',
+}
+
 export default function About() {
   return (
     <div className='max-w-2xl mx-auto py-16 px-4'>
