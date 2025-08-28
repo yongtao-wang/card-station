@@ -186,7 +186,7 @@ export default function FlipCard() {
         <div className='flex items-center gap-3'>
           <label className='text-sm text-slate-700'>Board Size</label>
           <select
-            className='rounded-lg border border-black/10 bg-white/80 px-3 py-2 shadow-sm'
+            className='rounded-lg border border-black/10 bg-white/80 text-slate-700 px-3 py-2 shadow-sm'
             value={size}
             onChange={(e) => setSize(parseInt(e.target.value))}
           >

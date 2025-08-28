@@ -190,17 +190,6 @@ export default function BlackJack() {
       localStorage.getItem('bj_dealerChips') || '20000',
       10
     )
-    // setPlayers([
-    //   { id: 'player', name: 'You', chips: playerChips, hand: [], bet: 0 },
-    //   {
-    //     id: 'dealer',
-    //     name: 'Dealer',
-    //     chips: dealerChips,
-    //     hand: [],
-    //     bet: 0,
-    //     isDealer: true,
-    //   },
-    // ])
     setPlayer((prev) => ({
       ...prev,
       chips: playerChips,

@@ -936,8 +936,8 @@ export default function Holdem() {
         </div>
 
         {/* Bot Player */}
-        <div className='bg-red-100 rounded-lg p-4 mb-4'>
-          <div className='flex justify-between items-center'>
+        <div className='bg-red-100 rounded-lg p-4 mb-4 text-slate-800'>
+          <div className='flex justify-between items-center '>
             <div>
               <h3 className='font-bold text-lg'>{bot.name}</h3>
               <p>Chips: ${bot.chips}</p>
@@ -983,7 +983,7 @@ export default function Holdem() {
         </div>
 
         {/* Player */}
-        <div className='bg-blue-100 rounded-lg p-4 mb-4'>
+        <div className='bg-blue-100 rounded-lg p-4 mb-4 text-slate-800'>
           <div className='flex justify-between items-center'>
             <div>
               <h3 className='font-bold text-lg'>{player.name}</h3>

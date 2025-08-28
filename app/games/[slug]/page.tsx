@@ -48,7 +48,7 @@ export default async function GamePage({ params }: { params: PageParams }) {
           <h1 className='text-2xl font-bold flex items-center gap-2'>
             {game.emoji} {game.title}
           </h1>
-          <p className='text-slate-600'>{game.description}</p>
+          <p className='text-slate-400'>{game.description}</p>
         </div>
         <Link href='/' className='btn'>
           All Games

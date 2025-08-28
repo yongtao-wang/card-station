@@ -50,9 +50,17 @@ export default function RootLayout({
 }) {
   return (
     <html lang='en'>
-      <body className='min-h-screen bg-gradient-to-b from-amber-50 to-teal-50 text-slate-800 flex flex-col'>
+      <body className='min-h-screen bg-gradient-to-br from-[#19162e] via-[#1f1b3f] to-[#0d0b1c] text-slate-100 flex flex-col relative overflow-x-hidden'>
+        {/* ambient neon background */}
+        <div aria-hidden className='pointer-events-none fixed inset-0 -z-10'>
+          <div className='absolute -top-24 -left-24 h-96 w-96 rounded-full bg-fuchsia-500/20 blur-3xl' />
+          <div className='absolute bottom-[-6rem] right-[-4rem] h-80 w-80 rounded-full bg-cyan-400/20 blur-3xl' />
+        </div>
+        {/* Skip to content for keyboard users */}
+        <a href='#main' className='sr-only focus:not-sr-only focus:absolute focus:m-4 focus:rounded focus:bg-black/60 focus:text-white focus:px-3 focus:py-1 focus:shadow focus:outline-none'>Skip to content</a>
         <Header />
-        <main className='flex-1 w-full max-w-5xl mx-auto px-4 py-6'>
+        <div aria-hidden className='h-14'></div>
+        <main id='main' className='flex-1 w-full max-w-6xl mx-auto px-4 py-8 md:py-10'>
           {children}
         </main>
         <Footer />
