@@ -92,18 +92,12 @@ export default function HomePage() {
       </section>
       <section className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
         {games.map((g) => (
-          <Link
-            key={g.slug}
-            href={`/games/${g.slug}`}
-            className='rounded-lg bg-white/5 backdrop-blur ring-1 ring-white/10 flex flex-col items-center justify-center gap-2 p-6 hover:scale-[1.02] transition'
-          >
-            <div className='flex items-center gap-2'>
-              <span className='text-3xl'>{g.emoji}</span>
-              <span className='font-semibold text-white/90'>{g.title}</span>
-            </div>
-            <span className='text-xs text-white/70 text-center'>
-              {g.description}
-            </span>
+          <Link key={g.slug} href={`/games/${g.slug}`}>
+            <GameCard
+              title={g.title}
+              description={g.description}
+              emoji={g.emoji}
+            />
           </Link>
         ))}
       </section>

@@ -36,12 +36,11 @@ export const games: GameMeta[] = [
     title: 'High Low',
     description: 'Guess if the next card will be higher or lower.',
     emoji: '🔼🔽',
-  }
-  ,
+  },
   {
     slug: 'snap',
     title: 'Snap',
     description: 'React quickly when two cards match!',
     emoji: '👋',
-  }
+  },
 ]
