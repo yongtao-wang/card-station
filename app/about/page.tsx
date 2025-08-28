@@ -1,8 +1,10 @@
 import type { Metadata } from 'next'
+import { site } from '@/lib/site'
 
 export const metadata: Metadata = {
   title: 'About Card Station — Free Online Card Games',
   description: 'Learn about Card Station: free online card & memory mini games like Blackjack, Texas Hold\'em vs Bot, Flip Card, High Low & Snap. No signup, just play.',
+  alternates: { canonical: site.url ? `${site.url}/about` : undefined }
 }
 
 export default function About() {

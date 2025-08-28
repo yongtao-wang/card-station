@@ -23,9 +23,6 @@ This roadmap focuses on SEO, content depth, UX polish, and future scalability. I
 1. Per-Game JSON-LD (Game schema) — P0 / S
     - Inject dedicated `<script type="application/ld+json">` with Game attributes.
     - Acceptance: Each game page validates in Rich Results Test.
-1. Improve Image Semantics — P0 / S
-    - Replace raw `<img>` with Next `<Image>` + informative alt text.
-    - Add explicit width/height for CLS; ensure memory card alt reflects symbol.
 1. Canonical Domain Enforcement — P0 / S
     - Set `NEXT_PUBLIC_SITE_URL` in deployment; add `alternates.canonical` to home/about.
 1. Custom 404 / Not Found Page — P1 / S
