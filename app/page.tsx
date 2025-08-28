@@ -5,9 +5,11 @@ import { games } from '@/games/index'
 import { site } from '@/lib/site'
 
 export const metadata: Metadata = {
-  title: 'Play Free Online Card Games (Blackjack, Hold\'em, Memory) — Card Station',
-  description: 'Instant, free & fun mini card games: Blackjack, Texas Hold\'em vs Bot, Flip Card memory game, High Low & Snap. Mobile-friendly & no signup required.',
-  alternates: { canonical: site.url || undefined }
+  title:
+    "Play Free Online Card Games (Blackjack, Hold'em, Memory) — Card Station",
+  description:
+    "Instant, free & fun mini card games: Blackjack, Texas Hold'em vs Bot, Flip Card memory game, High Low & Snap. Mobile-friendly & no signup required.",
+  alternates: { canonical: site.url || undefined },
 }
 
 export default function HomePage() {
@@ -27,42 +29,81 @@ export default function HomePage() {
               Play Free Online Card Games
             </h1>
             <p className='text-slate-200/90 max-w-xl'>
-              Blackjack, Texas Hold&apos;em vs Bot, Flip Card, High-Low &amp; Snap — instant play, no signup.
+              Blackjack, Texas Hold&apos;em vs Bot, Flip Card, High-Low &amp;
+              Snap — instant play, no signup.
             </p>
             <div className='flex flex-wrap gap-3 pt-2'>
-              <Link href='/games/blackjack' className='inline-flex items-center rounded-xl bg-gradient-to-r from-fuchsia-500 to-indigo-500 px-4 py-2 font-semibold shadow-lg shadow-fuchsia-500/20 ring-1 ring-white/10 hover:scale-[1.02] transition'>
+              <Link
+                href='/games/blackjack'
+                className='inline-flex items-center rounded-xl bg-gradient-to-r from-fuchsia-500 to-indigo-500 px-4 py-2 font-semibold shadow-lg shadow-fuchsia-500/20 ring-1 ring-white/10 hover:scale-[1.02] transition'
+              >
                 ▶ Play Blackjack
               </Link>
-              <Link href='/games' className='inline-flex items-center rounded-xl bg-white/10 backdrop-blur px-4 py-2 font-semibold ring-1 ring-white/20 hover:bg-white/15 transition'>
+              <Link
+                href='/games'
+                className='inline-flex items-center rounded-xl bg-white/10 backdrop-blur px-4 py-2 font-semibold ring-1 ring-white/20 hover:bg-white/15 transition'
+              >
                 Browse All Games
               </Link>
             </div>
             <ul className='flex flex-wrap gap-2 pt-3 text-xs text-slate-200/80'>
-              <li className='px-2 py-1 rounded-full bg-white/10 ring-1 ring-white/15'>No signup</li>
-              <li className='px-2 py-1 rounded-full bg-white/10 ring-1 ring-white/15'>Mobile-friendly</li>
-              <li className='px-2 py-1 rounded-full bg-white/10 ring-1 ring-white/15'>Free forever</li>
+              <li className='px-2 py-1 rounded-full bg-white/10 ring-1 ring-white/15'>
+                No signup
+              </li>
+              <li className='px-2 py-1 rounded-full bg-white/10 ring-1 ring-white/15'>
+                Mobile-friendly
+              </li>
+              <li className='px-2 py-1 rounded-full bg-white/10 ring-1 ring-white/15'>
+                Free forever
+              </li>
             </ul>
           </div>
 
           {/* Right: simple preview panel (placeholder) */}
           <div className='rounded-2xl bg-white/5 backdrop-blur ring-1 ring-white/10 p-4 md:p-6'>
-            <div className='text-sm text-slate-200/80 font-semibold tracking-wide'>Now Trending</div>
+            <div className='text-sm text-slate-200/80 font-semibold tracking-wide'>
+              Now Trending
+            </div>
             <div className='mt-3 grid grid-cols-3 gap-3'>
-              <div className='aspect-video rounded-lg bg-gradient-to-br from-fuchsia-400/30 to-indigo-400/20 ring-1 ring-white/10' />
-              <div className='aspect-video rounded-lg bg-gradient-to-br from-cyan-400/30 to-sky-400/20 ring-1 ring-white/10' />
-              <div className='aspect-video rounded-lg bg-gradient-to-br from-amber-400/30 to-rose-400/20 ring-1 ring-white/10' />
+              <Link
+                href='/games/holdem'
+                className='aspect-video rounded-lg bg-gradient-to-br from-fuchsia-400/30 to-indigo-400/20 ring-1 ring-white/10 flex flex-row items-center justify-center gap-2 text-sm font-semibold text-white/90'
+              >
+                <span className='text-2xl'>♠️</span>
+                <span>Hold&apos;em</span>
+              </Link>
+              <Link
+                href='/games/flip-card'
+                className='aspect-video rounded-lg bg-gradient-to-br from-cyan-400/30 to-sky-400/20 ring-1 ring-white/10 flex flex-row items-center justify-center gap-2 text-sm font-semibold text-white/90'
+              >
+                <span className='text-2xl'>🃏</span>
+                <span>Flip Card</span>
+              </Link>
+              <Link
+                href='/games/snap'
+                className='aspect-video rounded-lg bg-gradient-to-br from-amber-400/30 to-rose-400/20 ring-1 ring-white/10 flex flex-row items-center justify-center gap-2 text-sm font-semibold text-white/90'
+              >
+                <span className='text-2xl'>👋</span>
+                <span>Snap</span>
+              </Link>
             </div>
           </div>
         </div>
       </section>
       <section className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
         {games.map((g) => (
-          <Link key={g.slug} href={`/games/${g.slug}`}>
-            <GameCard
-              title={g.title}
-              description={g.description}
-              emoji={g.emoji}
-            />
+          <Link
+            key={g.slug}
+            href={`/games/${g.slug}`}
+            className='rounded-lg bg-white/5 backdrop-blur ring-1 ring-white/10 flex flex-col items-center justify-center gap-2 p-6 hover:scale-[1.02] transition'
+          >
+            <div className='flex items-center gap-2'>
+              <span className='text-3xl'>{g.emoji}</span>
+              <span className='font-semibold text-white/90'>{g.title}</span>
+            </div>
+            <span className='text-xs text-white/70 text-center'>
+              {g.description}
+            </span>
           </Link>
         ))}
       </section>
