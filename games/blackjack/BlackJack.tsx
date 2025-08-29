@@ -354,7 +354,7 @@ export default function BlackJack() {
               max={player?.chips ?? 1000}
               value={betAmount}
               onChange={(e) => setBetAmount(Number(e.target.value))}
-              className={styles.betInput}
+              className={`${styles.betInput} text-slate-900`}
             />
           </div>
           <div className={styles.controlPanel}>
