@@ -51,7 +51,7 @@ function getCardSvgPath(card: Card): string {
     J: 'jack',
     '10': '10',
   }
-  return `/img/cards/${rankMap[card.rank]}_of_${card.suit}.svg`
+  return `/assets/img/cards/${rankMap[card.rank]}_of_${card.suit}.svg`
 }
 
 export default function Snap() {
@@ -385,7 +385,7 @@ export default function Snap() {
                 {showSnapBadge === 1 && (
                   <div className={`${styles.snapBadge} ${styles.snapBadgeShow}`}>
                     <Image
-                      src='/img/effects/snap.png'
+                      src='/assets/img/effects/snap.png'
                       alt='SNAP!'
                       width={60}
                       height={60}
@@ -453,7 +453,7 @@ export default function Snap() {
                 {showSnapBadge === 0 && (
                   <div className={`${styles.snapBadge} ${styles.snapBadgeShow}`}>
                     <Image
-                      src='/img/effects/snap.png'
+                      src='/assets/img/effects/snap.png'
                       alt='SNAP!'
                       width={60}
                       height={60}

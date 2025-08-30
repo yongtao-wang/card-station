@@ -35,9 +35,9 @@ export default function HomePage() {
             <div className='flex flex-wrap gap-3 pt-2'>
               <Link
                 href='/games/blackjack'
-                className='inline-flex items-center rounded-xl bg-gradient-to-r from-fuchsia-500 to-indigo-500 px-4 py-2 font-semibold shadow-lg shadow-fuchsia-500/20 ring-1 ring-white/10 hover:scale-[1.02] transition'
+                className='btn-shimmer group inline-flex items-center rounded-xl bg-gradient-to-r from-fuchsia-500 to-indigo-500 px-4 py-2 font-semibold shadow-lg shadow-fuchsia-500/20 ring-1 ring-white/10 transition-all duration-300'
               >
-                ▶ Play Blackjack
+                <span>▶ Play Blackjack</span>
               </Link>
               <Link
                 href='/games'
@@ -67,21 +67,21 @@ export default function HomePage() {
             <div className='mt-3 grid grid-cols-3 gap-3'>
               <Link
                 href='/games/holdem'
-                className='aspect-video rounded-lg bg-gradient-to-br from-fuchsia-400/30 to-indigo-400/20 ring-1 ring-white/10 flex flex-row items-center justify-center gap-2 text-sm font-semibold text-white/90'
+                className='btn-shimmer aspect-video rounded-lg bg-gradient-to-br from-fuchsia-400/30 to-indigo-400/20 ring-1 ring-white/10 flex flex-row items-center justify-center gap-2 text-sm font-semibold text-white/90'
               >
                 <span className='text-2xl'>♠️</span>
                 <span>Hold&apos;em</span>
               </Link>
               <Link
                 href='/games/flip-card'
-                className='aspect-video rounded-lg bg-gradient-to-br from-cyan-400/30 to-sky-400/20 ring-1 ring-white/10 flex flex-row items-center justify-center gap-2 text-sm font-semibold text-white/90'
+                className='btn-shimmer aspect-video rounded-lg bg-gradient-to-br from-cyan-400/30 to-sky-400/20 ring-1 ring-white/10 flex flex-row items-center justify-center gap-2 text-sm font-semibold text-white/90'
               >
                 <span className='text-2xl'>🃏</span>
                 <span>Flip Card</span>
               </Link>
               <Link
                 href='/games/snap'
-                className='aspect-video rounded-lg bg-gradient-to-br from-amber-400/30 to-rose-400/20 ring-1 ring-white/10 flex flex-row items-center justify-center gap-2 text-sm font-semibold text-white/90'
+                className='btn-shimmer aspect-video rounded-lg bg-gradient-to-br from-amber-400/30 to-rose-400/20 ring-1 ring-white/10 flex flex-row items-center justify-center gap-2 text-sm font-semibold text-white/90'
               >
                 <span className='text-2xl'>👋</span>
                 <span>Snap</span>

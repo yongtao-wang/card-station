@@ -60,7 +60,7 @@ function getCardSvgPath(card: Card) {
     '3': '3',
     '2': '2',
   }
-  return `/img/cards/${rankMap[card.rank]}_of_${card.suit}.svg`
+  return `/assets/img/cards/${rankMap[card.rank]}_of_${card.suit}.svg`
 }
 
 function getCardValue(card: Card) {

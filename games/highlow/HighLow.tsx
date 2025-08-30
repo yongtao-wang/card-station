@@ -23,7 +23,7 @@ const RANKS = [
 ] as const
 const CARD_WIDTH = 96
 const CARD_HEIGHT = 144
-const CARD_BACK = '/img/cards/card_back.jpg'
+const CARD_BACK = '/assets/img/cards/card_back.jpg'
 
 type Suit = (typeof SUITS)[number]
 type Rank = (typeof RANKS)[number]
@@ -49,7 +49,7 @@ function getCardSvgPath(card: Card) {
     '3': '3',
     '2': '2',
   }
-  return `/img/cards/${rankMap[card.rank]}_of_${card.suit}.svg`
+  return `/assets/img/cards/${rankMap[card.rank]}_of_${card.suit}.svg`
 }
 
 function getCardValue(rank: Rank) {
@@ -277,10 +277,17 @@ export default function HighLow() {
       <div className='mt-10 bg-white/80 rounded-lg p-6 max-w-3xl mx-auto shadow-lg text-gray-900'>
         <h2 className='text-2xl font-bold mb-2'>How to Play High-Low</h2>
         <p>
-          Try to guess if the hidden card is higher, lower, or exactly equal to the flipped card.<br />
-          If you guess <strong>higher</strong> or <strong>lower</strong> correctly, you earn <strong>10 points</strong> and move to the next round.<br />
-          If you guess <strong>Exact!</strong> and the cards match, you earn <strong>20 points</strong>.<br />
-          The flipped card is discarded, and the hidden card becomes the new flipped card. Play until the deck runs out. Good luck!
+          Try to guess if the hidden card is higher, lower, or exactly equal to
+          the flipped card.
+          <br />
+          If you guess <strong>higher</strong> or <strong>lower</strong>{' '}
+          correctly, you earn <strong>10 points</strong> and move to the next
+          round.
+          <br />
+          If you guess <strong>Exact!</strong> and the cards match, you earn{' '}
+          <strong>20 points</strong>.<br />
+          The flipped card is discarded, and the hidden card becomes the new
+          flipped card. Play until the deck runs out. Good luck!
         </p>
       </div>
     </div>

@@ -455,7 +455,7 @@ const getCardSvgPath = (card: Card): string => {
     '3': '3',
     '2': '2',
   }
-  return `/img/cards/${rankMap[card.rank]}_of_${card.suit}.svg`
+  return `/assets/img/cards/${rankMap[card.rank]}_of_${card.suit}.svg`
 }
 
 export default function Holdem() {
@@ -910,11 +910,11 @@ export default function Holdem() {
         {/* Community Cards */}
         <div className='text-center mb-6'>
           <h3 className='text-white text-lg mb-2'>Community Cards</h3>
-          <div className='flex justify-center space-x-2'>
+          <div className='flex flex-wrap justify-center gap-2'>
             {gameState.communityCards.map((card, index) => (
               <div
                 key={index}
-                className={`${styles.card} rounded-lg shadow-lg overflow-hidden`}
+                className={`${styles.card} rounded-lg shadow-lg overflow-hidden flex-shrink-0`}
               >
                 <Image
                   src={getCardSvgPath(card)}
@@ -929,7 +929,7 @@ export default function Holdem() {
             {[...Array(5 - gameState.communityCards.length)].map((_, index) => (
               <div
                 key={`empty-${index}`}
-                className={`${styles.card} ${styles.empty} bg-transparent border-2 rounded-lg shadow-lg`}
+                className={`${styles.card} ${styles.empty} bg-transparent border-2 rounded-lg shadow-lg flex-shrink-0`}
               />
             ))}
           </div>
@@ -958,7 +958,7 @@ export default function Holdem() {
                     <div className={styles.cardFront}>
                       <Image
                         className='object-cover shadow-lg'
-                        src='/img/cards/card_back.jpg'
+                        src='/assets/img/cards/card_back.jpg'
                         alt='Card Back'
                         fill
                         sizes='100vw'

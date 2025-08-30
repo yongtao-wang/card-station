@@ -93,11 +93,11 @@ function getCardSvgPath(card: Card): string {
     '3': '3',
     '2': '2',
   }
-  return `/img/cards/${rankMap[card.rank]}_of_${card.suit}.svg`
+  return `/assets/img/cards/${rankMap[card.rank]}_of_${card.suit}.svg`
 }
 
 function getDeckPath(): string {
-  return '/img/cards/deck.svg'
+  return '/assets/img/cards/deck.svg'
 }
 
 export default function War() {
@@ -256,7 +256,7 @@ export default function War() {
                   {/* Card back: JPG image */}
                   <div className={`${styles.cardFace} ${styles.cardBack}`}>
                     <Image
-                      src='/img/cards/card_back.jpg'
+                      src='/assets/img/cards/card_back.jpg'
                       alt='Card Back'
                       width={CARD_WIDTH}
                       height={CARD_HEIGHT}
@@ -304,7 +304,7 @@ export default function War() {
               >
                 <div className={`${styles.cardFace} ${styles.cardBack}`}>
                   <Image
-                    src='/img/cards/card_back.jpg'
+                    src='/assets/img/cards/card_back.jpg'
                     alt='Card Back'
                     width={CARD_WIDTH}
                     height={CARD_HEIGHT}
@@ -365,7 +365,7 @@ export default function War() {
                 >
                   <div className={`${styles.cardFace} ${styles.cardBack}`}>
                     <Image
-                      src='/img/cards/card_back.jpg'
+                      src='/assets/img/cards/card_back.jpg'
                       alt='Card Back'
                       width={CARD_WIDTH}
                       height={CARD_HEIGHT}
@@ -415,7 +415,7 @@ export default function War() {
               >
                 <div className={`${styles.cardFace} ${styles.cardBack}`}>
                   <Image
-                    src='/img/cards/card_back.jpg'
+                    src='/assets/img/cards/card_back.jpg'
                     alt='Card Back'
                     width={CARD_WIDTH}
                     height={CARD_HEIGHT}

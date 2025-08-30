@@ -1,8 +1,8 @@
 /* Blackjack Game Styles */
 
 .card {
-  width: 80px;
-  height: 120px;
+  width: 96px;
+  height: 144px;
   border-radius: 8px;
   overflow: hidden;
   position: relative;

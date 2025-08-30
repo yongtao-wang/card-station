@@ -50,7 +50,10 @@ export default async function GamePage({ params }: { params: PageParams }) {
           </h1>
           <p className='text-slate-400'>{game.description}</p>
         </div>
-        <Link href='/' className='btn'>
+        <Link 
+          href='/' 
+          className='inline-flex items-center gap-2 rounded-lg bg-white/10 backdrop-blur text-white font-semibold shadow ring-1 ring-white/20 hover:bg-white/20 hover:ring-white/30 active:translate-y-px transition text-sm px-3 py-1.5 sm:text-base sm:px-4 sm:py-2'
+        >
           All Games
         </Link>
       </header>

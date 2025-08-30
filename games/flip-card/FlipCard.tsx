@@ -24,7 +24,7 @@ function shuffle<T>(arr: T[]): T[] {
 const SYMBOL_IMAGE_COUNT = 30
 const SPRITES = Array.from(
   { length: SYMBOL_IMAGE_COUNT },
-  (_, i) => `/img/sprites/sprite_${i + 1}.png`
+  (_, i) => `/assets/img/sprites/sprite_${i + 1}.png`
 )
 
 const STORAGE_KEY = 'flip-cardie:flip-card:history'
@@ -225,14 +225,16 @@ export default function FlipCard() {
           <button
             key={c.id}
             onClick={() => onFlip(c)}
-            className={`${styles.card} ${c.flipped || c.matched ? styles.flipped : ''}`}
+            className={`${styles.card} ${
+              c.flipped || c.matched ? styles.flipped : ''
+            }`}
             aria-label={c.flipped ? `Card symbol ${c.symbol}` : 'Hidden card'}
           >
             <div className={styles.cardInner}>
               <div className={styles.cardFront}>
                 {/* Card back - shown when not flipped */}
               </div>
-                <div className={styles.cardBack}>
+              <div className={styles.cardBack}>
                 <Image
                   src={c.symbol}
                   alt='Card symbol'
@@ -240,7 +242,7 @@ export default function FlipCard() {
                   height={80}
                   className='w-4/5 h-4/5 object-contain'
                 />
-                </div>
+              </div>
             </div>
           </button>
         ))}
@@ -254,7 +256,9 @@ export default function FlipCard() {
           <div className='text-sm text-emerald-700'>
             You finished in {moves} moves and {elapsed} seconds.
             {best && best.moves === moves && best.seconds === elapsed && (
-              <span className='block font-semibold'>This is your best score!</span>
+              <span className='block font-semibold'>
+                This is your best score!
+              </span>
             )}
           </div>
         </div>
