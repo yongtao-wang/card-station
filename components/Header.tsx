@@ -26,6 +26,9 @@ export default function Header() {
           <Link href='/about' className='text-slate-200 hover:text-white'>
             ABOUT
           </Link>
+          <Link href='/contact' className='text-slate-200 hover:text-white'>
+            CONTACT
+          </Link>
         </nav>
       </div>
     </header>
