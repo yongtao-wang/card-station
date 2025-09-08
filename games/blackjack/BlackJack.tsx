@@ -23,7 +23,9 @@ const RANKS = [
   'A',
 ] as const
 const PLAYER_INIT_CHIP = 1000
-const DEALER_INIT_CHIP = 20000
+const DEALER_INIT_CHIP = Number.MAX_SAFE_INTEGER // effectively infinite dealer chips
+
+const CARD_OFFSET = '-70px'
 
 type Suit = (typeof SUITS)[number]
 type Rank = (typeof RANKS)[number]
@@ -41,7 +43,6 @@ interface Player {
   bet: number
   isDealer?: boolean
   isStanding?: boolean
-  isBusted?: boolean
 }
 
 function getCardSvgPath(card: Card) {
@@ -177,40 +178,46 @@ export default function BlackJack() {
   const [phase, setPhase] = useState<
     'bet' | 'deal' | 'player' | 'dealer' | 'result'
   >('bet')
-  const [betAmount, setBetAmount] = useState(100)
+  const [betAmount, setBetAmount] = useState(0)
   const [autoPlayEnabled, setAutoPlayEnabled] = useState(false)
+  const [wins, setWins] = useState(0)
+  const [losses, setLosses] = useState(0)
+  const [showResetDropdown, setShowResetDropdown] = useState(false)
+  const [isClosingDropdown, setIsClosingDropdown] = useState(false)
 
-  // Load chips from localStorage
+  // Load data from localStorage
   useEffect(() => {
     const playerChips = parseInt(
       localStorage.getItem('bj_playerChips') || '1000',
       10
     )
-    const dealerChips = parseInt(
-      localStorage.getItem('bj_dealerChips') || '20000',
-      10
-    )
+    const savedWins = parseInt(localStorage.getItem('bj_wins') || '0', 10)
+    const savedLosses = parseInt(localStorage.getItem('bj_losses') || '0', 10)
     setPlayer((prev) => ({
       ...prev,
       chips: playerChips,
     }))
-    setDealer((prev) => ({
-      ...prev,
-      chips: dealerChips,
-    }))
+    setWins(savedWins)
+    setLosses(savedLosses)
   }, [])
 
-  // Save chips to localStorage
+  // Save data to localStorage
   useEffect(() => {
     localStorage.setItem('bj_playerChips', String(player.chips))
-    localStorage.setItem('bj_dealerChips', String(dealer.chips))
-  }, [player, dealer])
+    localStorage.setItem('bj_wins', String(wins))
+    localStorage.setItem('bj_losses', String(losses))
+  }, [player.chips, wins, losses])
+
+  // Show reset dropdown when balance is <= 0 and in bet phase
+  useEffect(() => {
+    setShowResetDropdown(player.chips <= 0 && phase === 'bet')
+  }, [player.chips, phase])
 
   useEffect(() => {
     if (!autoPlayEnabled) return
     if (phase !== 'player') return
     if (!player || !dealer) return
-    if (player.isBusted) return
+    if (calculateHandValue(player.hand) > 21) return
 
     const decision = basicStrategyDecision(player.hand, dealer.hand?.[0])
     const delay = 700
@@ -240,7 +247,6 @@ export default function BlackJack() {
       hand: playerHand,
       bet: betAmount,
       isStanding: false,
-      isBusted: false,
       chips: player.chips - betAmount,
     }))
     setDealer((prev) => ({
@@ -248,8 +254,6 @@ export default function BlackJack() {
       hand: dealerHand,
       bet: betAmount,
       isStanding: false,
-      isBusted: false,
-      chips: dealer.chips - betAmount,
     }))
     setDeck(newDeck.slice(4))
     setPhase('player')
@@ -261,12 +265,12 @@ export default function BlackJack() {
     const newCard = deck[0]
     const newHand = [...player.hand, newCard]
     const value = calculateHandValue(newHand)
-    setPlayer({ ...player, hand: newHand, isBusted: value > 21 })
+    setPlayer({ ...player, hand: newHand })
     setDeck(deck.slice(1))
     if (value > 21) {
       setMessage('Busted!')
-      setPhase('dealer')
-      setTimeout(() => dealerTurn(), 1000)
+      setPhase('result')
+      setTimeout(() => resolveBustHand(), 1000)
     }
   }
 
@@ -278,132 +282,157 @@ export default function BlackJack() {
   }
 
   function dealerTurn() {
-    let deckCopy = [...deck]
-    while (calculateHandValue(dealer.hand) < 17 && deckCopy.length > 0) {
-      dealer.hand.push(deck[0])
-      setDeck((prev) => prev.slice(1))
+    let currentDeck = [...deck]
+    let currentDealerHand = [...dealer.hand]
+
+    while (
+      calculateHandValue(currentDealerHand) < 17 &&
+      currentDeck.length > 0
+    ) {
+      const newCard = currentDeck[0]
+      currentDealerHand.push(newCard)
+      currentDeck = currentDeck.slice(1)
     }
-    dealer.isStanding = true
-    dealer.isBusted = calculateHandValue(dealer.hand) > 21
-    setDealer(dealer)
+
+    setDealer((prev) => ({
+      ...prev,
+      hand: currentDealerHand,
+      isStanding: true,
+    }))
+    setDeck(currentDeck)
     setPhase('result')
-    setTimeout(() => resolveHand(), 1000)
+    setTimeout(() => resolveHand(currentDealerHand), 1000)
   }
 
-  function resolveHand() {
+  function resolveBustHand() {
+    // Player busted - immediate loss, no dealer turn needed
+    setLosses((prev) => prev + 1)
+    setBetAmount(0)
+    setPhase('bet')
+    setMessage('You busted! Dealer wins.')
+  }
+
+  function resolveHand(dealerHand?: Card[]) {
     const playerValue = calculateHandValue(player.hand)
-    const dealerValue = calculateHandValue(dealer.hand)
+    // Use the passed dealerHand if provided, otherwise use the current dealer state
+    const finalDealerHand = dealerHand || dealer.hand
+    const dealerValue = calculateHandValue(finalDealerHand)
+    
+    // Debug logging to verify dealer hand calculation
+    console.log('Dealer final hand:', finalDealerHand)
+    console.log('Dealer value:', dealerValue)
+    
     let msg = ''
     let playerChips = player.chips
-    let dealerChips = dealer.chips
-    if (player.isBusted) {
-      msg = 'You busted! Dealer wins.'
-      dealerChips += player.bet * 2
-    } else if (dealer.isBusted) {
+    
+    // Player should not bust here since busts are handled immediately
+    if (dealerValue > 21) {
       msg = 'Dealer busted! You win.'
       playerChips += player.bet * 2
+      setWins((prev) => prev + 1)
     } else if (playerValue > dealerValue) {
       msg = 'You win!'
       playerChips += player.bet * 2
+      setWins((prev) => prev + 1)
     } else if (playerValue < dealerValue) {
       msg = 'Dealer wins.'
-      dealerChips += player.bet * 2
+      setLosses((prev) => prev + 1)
     } else {
       msg = 'Push! Bet returned.'
       playerChips += player.bet
-      dealerChips += dealer.bet
     }
     setPlayer((prev) => ({ ...prev, chips: playerChips }))
-    setDealer((prev) => ({ ...prev, chips: dealerChips }))
+    setBetAmount(0)
     setPhase('bet')
     setMessage(msg)
   }
 
   function resetChips() {
-    setPlayer((prev) => ({ ...prev, chips: PLAYER_INIT_CHIP }))
-    setDealer((prev) => ({ ...prev, chips: DEALER_INIT_CHIP }))
-    setMessage('Chips reset!')
+    setIsClosingDropdown(true)
+    setTimeout(() => {
+      setPlayer((prev) => ({ ...prev, chips: PLAYER_INIT_CHIP }))
+      setWins(0)
+      setLosses(0)
+      setMessage('Chips and stats reset!')
+      setShowResetDropdown(false)
+      setIsClosingDropdown(false)
+    }, 300) // Match the animation duration
+  }
+
+  function addToBet(amount: number) {
+    if (phase !== 'bet') return
+    const newBet = betAmount + amount
+    if (newBet > (player?.chips ?? 0)) {
+      setMessage('Not enough chips!')
+      return
+    }
+    setBetAmount(newBet)
+    setMessage('')
   }
 
   return (
-    <div className='min-h-screen bg-green-900 p-4'>
-      <div className='max-w-2xl mx-auto'>
-        <h1 className='text-3xl font-bold text-white text-center mb-6'>
-          Blackjack 1v1
-        </h1>
-        <div className='bg-green-700 rounded-lg p-4 mb-4 text-white text-center'>
-          <p className='text-lg font-semibold'>
-            Your Chips: {player?.chips ?? 1000}
-          </p>
-          <p className='text-lg font-semibold'>
-            Dealer Chips: {dealer?.chips ?? 1000}
-          </p>
-          <p className='text-yellow-300 mt-2 text-xl'>{message}</p>
-          <p className='text-sm mt-1 opacity-80'>
-            {autoPlayEnabled
-              ? 'Auto Play enabled (basic strategy)'
-              : 'Manual play'}
-          </p>
-        </div>
-        <div className='flex flex-col justify-center items-center mb-4'>
-          <div className={styles.betSection}>
-            <label className={styles.betLabel}>Bet Amount:</label>
-            <input
-              type='number'
-              min='1'
-              max={player?.chips ?? 1000}
-              value={betAmount}
-              onChange={(e) => setBetAmount(Number(e.target.value))}
-              className={`${styles.betInput} text-slate-900`}
-            />
-          </div>
-          <div className={styles.controlPanel}>
-            <button
-              onClick={startHand}
-              className={`${styles.button} ${styles.dealButton}`}
-            >
-              Deal
-            </button>
-            <button
-              onClick={resetChips}
-              className={`${styles.button} ${styles.resetButton}`}
-            >
-              Reset Chips
-            </button>
-            <button
-              onClick={() => setAutoPlayEnabled((v) => !v)}
-              className={`${styles.button} ${styles.autoPlayButton} ${
-                !autoPlayEnabled ? styles.disabled : ''
-              }`}
-              title='Toggle Auto Play (basic strategy)'
-            >
-              {autoPlayEnabled ? 'Auto Play: ON' : 'Auto Play: OFF'}
-            </button>
-          </div>
-        </div>
-        <div className='flex justify-between mb-8 min-h-[360px]'>
-          {/* Player Hand */}
-          <div className={styles.handSection}>
-            <h2 className={styles.handTitle}>
-              Your Hand ({calculateHandValue(player?.hand ?? [])})
-            </h2>
-            <div className={styles.playerHand}>
-              {player?.hand.map((card, idx) => (
-                <div key={idx} className={styles.card}>
-                  <Image
-                    src={getCardSvgPath(card)}
-                    alt={`${card.rank} of ${card.suit}`}
-                    fill
-                    sizes='100vw'
-                    style={{ objectFit: 'cover' }}
-                    priority
-                  />
+    <div className='min-h-screen p-4'>
+      <div className='w-full md:w-[48rem] bg-green-900 mx-auto rounded-3xl shadow-lg p-4 relative'>
+        {/* Player Stats - Top Right Corner */}
+        <div className='absolute top-4 right-4 text-white shadow-lg min-w-[200px]'>
+          <div className='relative p-4 border-b border-slate-700 rounded-lg bg-slate-800 z-50'>
+            <h3 className='text-yellow-400 text-lg font-bold text-center mb-3'>
+              Player Stats
+            </h3>
+            <div className='grid grid-cols-2 gap-4 text-center'>
+              <div>
+                <div className='text-green-400 text-xl font-bold'>
+                  ${player?.chips ?? 1000}
                 </div>
-              ))}
+                <div className='text-gray-300 text-sm'>Balance</div>
+              </div>
+              <div>
+                <div className='text-yellow-400 text-xl font-bold'>
+                  {wins + losses > 0
+                    ? ((wins / (wins + losses)) * 100).toFixed(1)
+                    : '0.0'}
+                  %
+                </div>
+                <div className='text-gray-300 text-sm'>Win Rate</div>
+              </div>
+              <div>
+                <div className='text-green-400 text-xl font-bold'>{wins}</div>
+                <div className='text-gray-300 text-sm'>Wins</div>
+              </div>
+              <div>
+                <div className='text-red-400 text-xl font-bold'>{losses}</div>
+                <div className='text-gray-300 text-sm'>Losses</div>
+              </div>
             </div>
           </div>
+
+          {/* Reset Chips Dropdown */}
+          {showResetDropdown && (
+            <div
+              className={`${styles.resetDropdown} ${
+                isClosingDropdown ? styles.closing : ''
+              } -translate-y-3`}
+            >
+              <p>Reset balance to $1000 to continue playing.</p>
+              <div className={styles.buttonGroup}>
+                <button
+                  onClick={resetChips}
+                  className={styles.confirmButton}
+                  disabled={isClosingDropdown}
+                >
+                  Reset Chips
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <h1 className='text-3xl font-bold text-white text-center p-8'>
+          Blackjack 1v1
+        </h1>
+        <div className='flex flex-col items-center m-4 min-h-[360px]'>
           {/* Dealer Hand */}
-          <div className={styles.handSection}>
+          <div className={`${styles.handSection} mb-8`}>
             <h2 className={styles.handTitle}>
               Dealer (
               {phase === 'player'
@@ -411,9 +440,69 @@ export default function BlackJack() {
                 : calculateHandValue(dealer?.hand ?? [])}
               )
             </h2>
-            <div className={styles.dealerHand}>
+            <div className={`${styles.dealerHand} ${styles.overlapping}`}>
               {dealer?.hand.map((card, idx) => (
-                <div key={idx} className={styles.card}>
+                <div
+                  key={idx}
+                  className={`${styles.card} ${styles.cardOverlapping}`}
+                  style={{
+                    marginLeft: idx > 0 ? CARD_OFFSET : '0',
+                    zIndex: idx + 1,
+                  }}
+                >
+                  <Image
+                    src={getCardSvgPath(card)}
+                    alt={`${card.rank} of ${card.suit}`}
+                    fill
+                    sizes='100vw'
+                    style={{ objectFit: 'cover' }}
+                    priority
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Deck Display */}
+          <div className={styles.deckContainer}>
+            <div className={styles.deckStack}>
+              {/* Create 52 stacked cards */}
+              {Array.from({ length: 52 }, (_, idx) => (
+                <div
+                  key={idx}
+                  className={styles.deckCard}
+                  style={{
+                    top: `${idx * 0.2}px`,
+                    zIndex: 52 - idx,
+                  }}
+                >
+                  <Image
+                    src='/assets/img/cards/card_back.jpg'
+                    alt='Card back'
+                    fill
+                    sizes='100px'
+                    style={{ objectFit: 'cover' }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Player Hand */}
+          <div className={`${styles.handSection} mt-8`}>
+            <h2 className={styles.handTitle}>
+              Your Hand ({calculateHandValue(player?.hand ?? [])})
+            </h2>
+            <div className={`${styles.playerHand} ${styles.overlapping}`}>
+              {player?.hand.map((card, idx) => (
+                <div
+                  key={idx}
+                  className={`${styles.card} ${styles.cardOverlapping}`}
+                  style={{
+                    marginLeft: idx > 0 ? CARD_OFFSET : '0',
+                    zIndex: idx + 1,
+                  }}
+                >
                   <Image
                     src={getCardSvgPath(card)}
                     alt={`${card.rank} of ${card.suit}`}
@@ -427,27 +516,107 @@ export default function BlackJack() {
             </div>
           </div>
         </div>
-        <div className='min-h-[60px]'>
-          {phase === 'player' && (
-            <div className={styles.controlPanel}>
+
+        <div className='grid grid-cols-2 gap-4'>
+          {/* Betting Section */}
+          <div className={`${styles.betSection} p-6 justify-self-end`}>
+            <div className='bg-green-900 border-4 border-yellow-500 rounded-full w-32 h-32 flex flex-col justify-center items-center shadow-lg'>
+              <label className={`${styles.betLabel} mb-1 text-center`}>
+                Current Bet
+              </label>
+              <span className='text-center text-white text-lg mt-2'>
+                $ {betAmount}
+              </span>
+            </div>
+          </div>
+
+          {/* Control Buttons */}
+          <div className='flex flex-col'>
+            {/* Betting Buttons */}
+            <div className='text-left px-4'>Place Your Bet:</div>
+            <div className={`${styles.betButtons} p-4`}>
               <button
-                onClick={hit}
-                className={`${styles.button} ${styles.hitButton}`}
+                onClick={() => addToBet(1)}
+                disabled={phase !== 'bet'}
+                className={styles.betButton}
               >
-                Hit
+                +$1
               </button>
               <button
-                onClick={stand}
-                className={`${styles.button} ${styles.standButton}`}
+                onClick={() => addToBet(10)}
+                disabled={phase !== 'bet'}
+                className={styles.betButton}
               >
-                Stand
+                +$10
+              </button>
+              <button
+                onClick={() => addToBet(50)}
+                disabled={phase !== 'bet'}
+                className={styles.betButton}
+              >
+                +$50
+              </button>
+              <button
+                onClick={() => addToBet(100)}
+                disabled={phase !== 'bet'}
+                className={styles.betButton}
+              >
+                +$100
               </button>
             </div>
-          )}
+            {phase === 'bet' ? (
+              <div className='flex flex-col justify-center items-center mb-4'>
+                <div className={styles.controlPanel}>
+                  <button
+                    onClick={startHand}
+                    className={`${styles.button} ${styles.dealButton}`}
+                  >
+                    Deal
+                  </button>
+                  <button
+                    onClick={() => setAutoPlayEnabled((v) => !v)}
+                    className={`${styles.button} ${styles.autoPlayButton} ${
+                      !autoPlayEnabled ? styles.disabled : ''
+                    }`}
+                    title='Toggle Auto Play (basic strategy)'
+                  >
+                    {autoPlayEnabled ? 'Auto Play: ON' : 'Auto Play: OFF'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className='min-h-[60px]'>
+                {phase === 'player' && (
+                  <div className={styles.controlPanel}>
+                    <button
+                      onClick={hit}
+                      className={`${styles.button} ${styles.hitButton}`}
+                    >
+                      Hit
+                    </button>
+                    <button
+                      onClick={stand}
+                      className={`${styles.button} ${styles.standButton}`}
+                    >
+                      Stand
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+        <div className='bg-green-700 rounded-lg p-4 mb-4 text-white text-center'>
+          <p className='text-yellow-300 mt-2 text-xl min-h-[32px]'>{message}</p>
+          <p className='text-sm mt-1 opacity-80'>
+            {autoPlayEnabled
+              ? 'Auto Play enabled (basic strategy)'
+              : 'Manual play'}
+          </p>
         </div>
       </div>
       {/* Blackjack Game Introduction */}
-      <div className='mt-10 bg-white/80 rounded-lg p-6 max-w-2xl mx-auto shadow-lg text-gray-900'>
+      <div className='mt-10 bg-white/80 rounded-lg p-6 max-w-3xl mx-auto shadow-lg text-gray-900'>
         <h2 className='text-2xl font-bold mb-2'>
           Blackjack 1v1 Online – Rules & How to Play
         </h2>
@@ -478,8 +647,8 @@ export default function BlackJack() {
             If you beat the dealer or the dealer busts, you win double your bet!
           </li>
           <li>
-            Use <span className='font-semibold'>Reset Chips</span> to restart
-            with 1000 chips if you run out.
+            If you run out of chips, you'll be prompted to reset your balance to
+            1000 chips.
           </li>
         </ul>
         <h3 className='text-xl font-semibold mb-2'>

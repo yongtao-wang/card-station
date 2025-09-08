@@ -15,14 +15,14 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <div className='space-y-8'>
-      <section className='relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#19162e] via-[#1f1b3f] to-[#0d0b1c] text-white ring-1 ring-white/10 shadow-xl p-6 md:p-10'>
+      <section className='relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#19162e] via-[#1f1b3f] to-[#0d0b1c] text-white ring-1 ring-white/10 shadow-xl p-6 md:p-10 max-w-[64rem] mx-auto'>
         {/* ambient glow */}
         <div aria-hidden className='pointer-events-none absolute inset-0 -z-10'>
           <div className='absolute -top-24 -left-24 h-96 w-96 rounded-full bg-fuchsia-500/20 blur-3xl' />
           <div className='absolute bottom-[-6rem] right-[-4rem] h-80 w-80 rounded-full bg-cyan-400/20 blur-3xl' />
         </div>
 
-        <div className='grid grid-cols-1 lg:grid-cols-2 gap-8 items-center'>
+        <div className='grid grid-cols-1 md:grid-cols-2 gap-8 items-center'>
           {/* Left: CTA */}
           <div className='space-y-4'>
             <h1 className='text-3xl md:text-5xl font-extrabold tracking-tight'>
@@ -35,13 +35,13 @@ export default function HomePage() {
             <div className='flex flex-wrap gap-3 pt-2'>
               <Link
                 href='/games/blackjack'
-                className='btn-shimmer group inline-flex items-center rounded-xl bg-gradient-to-r from-fuchsia-500 to-indigo-500 px-4 py-2 font-semibold shadow-lg shadow-fuchsia-500/20 ring-1 ring-white/10 transition-all duration-300'
+                className='btn-shimmer group inline-flex items-center rounded-2xl bg-gradient-to-r from-fuchsia-500 to-indigo-500 px-4 py-2 font-semibold shadow-lg shadow-fuchsia-500/20 ring-1 ring-white/10 transition-all duration-300 min-w-[180px] max-w-xs justify-center'
               >
                 <span>▶ Play Blackjack</span>
               </Link>
               <Link
                 href='/games'
-                className='inline-flex items-center rounded-xl bg-white/10 backdrop-blur px-4 py-2 font-semibold ring-1 ring-white/20 hover:bg-white/15 transition'
+                className='inline-flex items-center rounded-2xl bg-white/10 backdrop-blur px-4 py-2 font-semibold ring-1 ring-white/20 hover:bg-white/15 transition min-w-[180px] max-w-xs justify-center'
               >
                 Browse All Games
               </Link>
@@ -67,21 +67,21 @@ export default function HomePage() {
             <div className='mt-3 grid grid-cols-3 gap-3'>
               <Link
                 href='/games/holdem'
-                className='btn-shimmer aspect-video rounded-lg bg-gradient-to-br from-fuchsia-400/30 to-indigo-400/20 ring-1 ring-white/10 flex flex-row items-center justify-center gap-2 text-sm font-semibold text-white/90'
+                className='btn-shimmer aspect-[5/3] rounded-lg bg-gradient-to-br from-fuchsia-400/30 to-indigo-400/20 ring-1 ring-white/10 flex flex-row items-center justify-center gap-2 text-sm font-semibold text-white/90'
               >
                 <span className='text-2xl'>♠️</span>
                 <span>Hold&apos;em</span>
               </Link>
               <Link
                 href='/games/flip-card'
-                className='btn-shimmer aspect-video rounded-lg bg-gradient-to-br from-cyan-400/30 to-sky-400/20 ring-1 ring-white/10 flex flex-row items-center justify-center gap-2 text-sm font-semibold text-white/90'
+                className='btn-shimmer aspect-[5/3] rounded-lg bg-gradient-to-br from-cyan-400/30 to-sky-400/20 ring-1 ring-white/10 flex flex-row items-center justify-center gap-2 text-sm font-semibold text-white/90'
               >
                 <span className='text-2xl'>🃏</span>
                 <span>Flip Card</span>
               </Link>
               <Link
                 href='/games/snap'
-                className='btn-shimmer aspect-video rounded-lg bg-gradient-to-br from-amber-400/30 to-rose-400/20 ring-1 ring-white/10 flex flex-row items-center justify-center gap-2 text-sm font-semibold text-white/90'
+                className='btn-shimmer aspect-[5/3] rounded-lg bg-gradient-to-br from-amber-400/30 to-rose-400/20 ring-1 ring-white/10 flex flex-row items-center justify-center gap-2 text-sm font-semibold text-white/90'
               >
                 <span className='text-2xl'>👋</span>
                 <span>Snap</span>
@@ -90,7 +90,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-      <section className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
+      <section className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-[64rem] mx-auto'>
         {games.map((g) => (
           <Link key={g.slug} href={`/games/${g.slug}`}>
             <GameCard

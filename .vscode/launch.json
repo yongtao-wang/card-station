@@ -16,7 +16,12 @@
         "NODE_OPTIONS": "--inspect"
       },
       "trace": true,
-      "sourceMaps": true
+      "sourceMaps": true,
+      "serverReadyAction": {
+        "pattern": "started server on .+, url: (https?://.+)",
+        "uriFormat": "%s",
+        "action": "openExternally"
+      }
     },
     {
       "type": "chrome",
@@ -24,6 +29,16 @@
       "name": "Chrome Debug Next.js",
       "url": "http://localhost:3000",
       "webRoot": "${workspaceFolder}"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Debug Next.js (Server + Chrome)",
+      "configurations": [
+        "Node Debug Next.js",
+        "Chrome Debug Next.js"
+      ],
+      "stopAll": true
     }
   ]
 }
