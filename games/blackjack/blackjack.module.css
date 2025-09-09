@@ -31,7 +31,7 @@
   min-height: 100px;
   justify-content: center;
   max-width: 100%;
-  overflow-x: auto;
+  /* overflow-x: auto; */
 }
 
 @media (min-width: 640px) {
@@ -55,7 +55,7 @@
   min-height: 100px;
   justify-content: center;
   max-width: 100%;
-  overflow-x: auto;
+  /* overflow-x: auto; */
 }
 
 @media (min-width: 640px) {

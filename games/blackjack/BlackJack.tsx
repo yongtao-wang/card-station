@@ -1,9 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import Image from 'next/image'
+import { motion } from 'framer-motion'
 import styles from './blackjack.module.css'
+import { time } from 'console'
 
 // Card types
 const SUITS = ['hearts', 'diamonds', 'clubs', 'spades'] as const
@@ -34,6 +36,9 @@ type Rank = (typeof RANKS)[number]
 interface Card {
   suit: Suit
   rank: Rank
+  faceDown?: boolean
+  isNewlyDealt?: boolean
+  isFlipping?: boolean
 }
 
 interface Player {
@@ -63,6 +68,109 @@ function getCardSvgPath(card: Card) {
     '2': '2',
   }
   return `/assets/img/cards/${rankMap[card.rank]}_of_${card.suit}.svg`
+}
+
+// Animated card component for serving cards from the right with flip animation
+function AnimatedCard({
+  card,
+  idx,
+  cardOffset,
+  style,
+}: {
+  card: Card
+  idx: number
+  cardOffset: string
+  style?: React.CSSProperties
+}) {
+  const isNewCard = card.isNewlyDealt
+  const isFlipping = card.isFlipping
+
+  // Flying animation: Card enters from the right
+  const flyingAnimation = isNewCard ? { x: 300, opacity: 0, scale: 0.8 } : false
+
+  // Flipping animation: Use card.faceDown to determine target rotation
+  // When faceDown=true, show card back (0 degrees)
+  // When faceDown=false, show card face (180 degrees)
+  const targetRotation = card.faceDown ? 0 : 180
+
+  return (
+    <motion.div
+      className={`${styles.card} ${styles.cardOverlapping}`}
+      style={{
+        marginLeft: idx > 0 ? cardOffset : '0',
+        zIndex: idx + 1,
+        ...style,
+      }}
+      initial={flyingAnimation}
+      animate={{ x: 0, opacity: 1, scale: 1 }}
+      transition={{
+        type: 'spring',
+        stiffness: 300,
+        damping: 30,
+        mass: 0.8,
+        delay: isNewCard ? idx * 0.2 : 0,
+      }}
+    >
+      {/* Flip wrapper */}
+      <motion.div
+        style={{
+          transformStyle: 'preserve-3d',
+          width: '100%',
+          height: '100%',
+          position: 'relative',
+          perspective: '1000px', // Add perspective for better 3D effect
+        }}
+        animate={{ rotateY: targetRotation }}
+        transition={{
+          duration: isFlipping ? 0.6 : 0,
+          ease: 'easeInOut',
+        }}
+      >
+        {/* Card back */}
+        <div
+          style={{
+            position: 'absolute',
+            width: '100%',
+            height: '100%',
+            backfaceVisibility: 'hidden',
+            WebkitBackfaceVisibility: 'hidden',
+            transform: 'rotateY(0deg)', // Explicitly set front face
+            transformStyle: 'preserve-3d',
+          }}
+        >
+          <Image
+            src={'/assets/img/cards/card_back.jpg'}
+            alt={'Card back'}
+            fill
+            sizes='100vw'
+            style={{ objectFit: 'cover' }}
+            priority
+          />
+        </div>
+        {/* Card face */}
+        <div
+          style={{
+            position: 'absolute',
+            width: '100%',
+            height: '100%',
+            backfaceVisibility: 'hidden',
+            WebkitBackfaceVisibility: 'hidden',
+            transform: 'rotateY(180deg)', // Explicitly set back face
+            transformStyle: 'preserve-3d',
+          }}
+        >
+          <Image
+            src={getCardSvgPath(card)}
+            alt={`${card.rank} of ${card.suit}`}
+            fill
+            sizes='100vw'
+            style={{ objectFit: 'cover' }}
+            priority
+          />
+        </div>
+      </motion.div>
+    </motion.div>
+  )
 }
 
 function getCardValue(card: Card) {
@@ -151,7 +259,7 @@ function createDeck(): Card[] {
   const deck: Card[] = []
   for (const suit of SUITS) {
     for (const rank of RANKS) {
-      deck.push({ suit, rank })
+      deck.push({ suit, rank, faceDown: false, isFlipping: false })
     }
   }
   return deck
@@ -192,7 +300,7 @@ export default function BlackJack() {
   const [deck, setDeck] = useState<Card[]>([])
   const [message, setMessage] = useState('')
   const [phase, setPhase] = useState<
-    'bet' | 'deal' | 'player' | 'dealer' | 'result'
+    'bet' | 'init' | 'deal' | 'player' | 'dealer' | 'result'
   >('bet')
   const [betAmount, setBetAmount] = useState(0)
   const [autoPlayEnabled, setAutoPlayEnabled] = useState(false)
@@ -200,6 +308,12 @@ export default function BlackJack() {
   const [losses, setLosses] = useState(0)
   const [showResetDropdown, setShowResetDropdown] = useState(false)
   const [isClosingDropdown, setIsClosingDropdown] = useState(false)
+  const [isDealing, setIsDealing] = useState(false)
+  const initDoneRef = useRef(false)
+  const dealDoneRef = useRef(false)
+
+  const sleep = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms))
 
   // Load data from localStorage
   useEffect(() => {
@@ -255,30 +369,146 @@ export default function BlackJack() {
       setMessage('Not enough chips to bet.')
       return
     }
+    // Enter init phase; deck setup and bet deduction handled by effects
+    initDoneRef.current = false
+    dealDoneRef.current = false
+    setPhase('init')
+    setMessage('Shuffling deck...')
+  }
+
+  // Init phase: setup deck, clear hands, place bets
+  useEffect(() => {
+    if (phase !== 'init') return
+    if (initDoneRef.current) return
+    initDoneRef.current = true
     const newDeck = shuffleDeck(createDeck())
-    const playerHand = [newDeck[0], newDeck[2]]
-    const dealerHand = [newDeck[1], newDeck[3]]
+    setDeck(newDeck)
     setPlayer((prev) => ({
       ...prev,
-      hand: playerHand,
+      hand: [],
       bet: betAmount,
       isStanding: false,
-      chips: player.chips - betAmount,
+      chips: prev.chips - betAmount,
     }))
     setDealer((prev) => ({
       ...prev,
-      hand: dealerHand,
+      hand: [],
       bet: betAmount,
       isStanding: false,
     }))
-    setDeck(newDeck.slice(4))
-    setPhase('player')
-    setMessage('Your turn!')
+    setPhase('deal')
+    setMessage('Dealing cards...')
+  }, [phase])
+
+  // Clear animation flags after animation completes
+  useEffect(() => {
+    const hasNewPlayerCards = player.hand.some((card) => card.isNewlyDealt)
+    const hasNewDealerCards = dealer.hand.some((card) => card.isNewlyDealt)
+    const hasFlippingPlayerCards = player.hand.some((card) => card.isFlipping)
+    const hasFlippingDealerCards = dealer.hand.some((card) => card.isFlipping)
+
+    if (hasNewPlayerCards || hasNewDealerCards) {
+      const timer = setTimeout(() => {
+        if (hasNewPlayerCards) {
+          setPlayer((prev) => ({
+            ...prev,
+            hand: prev.hand.map((card) => ({ ...card, isNewlyDealt: false })),
+          }))
+        }
+        if (hasNewDealerCards) {
+          setDealer((prev) => ({
+            ...prev,
+            hand: prev.hand.map((card) => ({ ...card, isNewlyDealt: false })),
+          }))
+        }
+      }, 1200) // Animation duration + max delay
+
+      return () => clearTimeout(timer)
+    }
+
+    // Handle flipping animations separately
+    if (hasFlippingPlayerCards || hasFlippingDealerCards) {
+      const flipTimer = setTimeout(() => {
+        if (hasFlippingPlayerCards) {
+          setPlayer((prev) => ({
+            ...prev,
+            hand: prev.hand.map((card) => ({ ...card, isFlipping: false })),
+          }))
+        }
+        if (hasFlippingDealerCards) {
+          setDealer((prev) => ({
+            ...prev,
+            hand: prev.hand.map((card) => ({ ...card, isFlipping: false })),
+          }))
+        }
+      }, 600) // Flipping animation duration
+
+      return () => clearTimeout(flipTimer)
+    }
+  }, [player.hand, dealer.hand])
+
+  // Deal a single card with control over face-up/face-down
+  async function dealCard(
+    to: 'player' | 'dealer',
+    faceUp: boolean = true,
+    delayMs: number = 250
+  ) {
+    let dealt = false
+    setDeck((prev) => {
+      if (prev.length === 0) return prev
+      const [top, ...rest] = prev
+      const cardToAdd: Card = {
+        ...top,
+        faceDown: !faceUp,
+        isNewlyDealt: true,
+        isFlipping: false,
+      }
+      if (to === 'player') {
+        setPlayer((p) => ({ ...p, hand: [...p.hand, cardToAdd] }))
+      } else {
+        setDealer((d) => ({ ...d, hand: [...d.hand, cardToAdd] }))
+      }
+      dealt = true
+      return rest
+    })
+    if (dealt && delayMs > 0) await sleep(delayMs)
   }
+
+  // Deal phase: deliver two cards to each player using dealCard
+  useEffect(() => {
+    if (phase !== 'deal') return
+    if (dealDoneRef.current) return
+    dealDoneRef.current = true
+    if (deck.length < 4) return
+    let cancelled = false
+    setIsDealing(true)
+    ;(async () => {
+      await dealCard('player', true)
+      if (cancelled) return
+      await dealCard('dealer', true)
+      if (cancelled) return
+      await dealCard('player', true)
+      if (cancelled) return
+      // Dealer second card face-down
+      await dealCard('dealer', false)
+      if (cancelled) return
+      setIsDealing(false)
+      setPhase('player')
+      setMessage('Your turn!')
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [phase])
 
   function hit() {
     if (phase !== 'player') return
-    const newCard = deck[0]
+    const newCard = {
+      ...deck[0],
+      faceDown: false,
+      isNewlyDealt: true,
+      isFlipping: false,
+    }
     const newHand = [...player.hand, newCard]
     const value = calculateHandValue(newHand)
     setPlayer({ ...player, hand: newHand })
@@ -298,26 +528,85 @@ export default function BlackJack() {
   }
 
   function dealerTurn() {
-    let currentDeck = [...deck]
-    let currentDealerHand = [...dealer.hand]
+    // Step 1: Check for face-down cards and start flip animation
+    const hasFaceDownCards = dealer.hand.some((card) => card.faceDown)
 
-    while (
-      calculateHandValue(currentDealerHand) < 17 &&
-      currentDeck.length > 0
-    ) {
-      const newCard = currentDeck[0]
-      currentDealerHand.push(newCard)
-      currentDeck = currentDeck.slice(1)
+    if (hasFaceDownCards) {
+      // Step 1: Start flipping animation AND change faceDown state simultaneously
+      setDealer((prev) => ({
+        ...prev,
+        hand: prev.hand.map((card) => ({
+          ...card,
+          faceDown: false, // Flip to face up
+          isFlipping: card.faceDown ? true : false, // Only animate cards that were face down
+          isNewlyDealt: false,
+        })),
+      }))
+
+      // Step 2: After flip animation completes, proceed with dealer logic
+      setTimeout(() => {
+        let currentDeck = [...deck]
+        let currentDealerHand = dealer.hand.map((card) => ({
+          ...card,
+          faceDown: false,
+          isFlipping: false,
+          isNewlyDealt: false,
+        }))
+
+        while (
+          calculateHandValue(currentDealerHand) < 17 &&
+          currentDeck.length > 0
+        ) {
+          const newCard = {
+            ...currentDeck[0],
+            faceDown: false,
+            isNewlyDealt: true,
+            isFlipping: false,
+          }
+          currentDealerHand.push(newCard)
+          currentDeck = currentDeck.slice(1)
+        }
+
+        setDealer((prev) => ({
+          ...prev,
+          hand: currentDealerHand,
+          isStanding: true,
+        }))
+        setDeck(currentDeck)
+        setPhase('result')
+        setTimeout(() => resolveHand(currentDealerHand), 1000)
+      }, 600) // Wait for full flip animation to complete
+    } else {
+      // No face-down cards, proceed directly with dealer logic
+      let currentDeck = [...deck]
+      let currentDealerHand = dealer.hand.map((card) => ({
+        ...card,
+        isNewlyDealt: false,
+      }))
+
+      while (
+        calculateHandValue(currentDealerHand) < 17 &&
+        currentDeck.length > 0
+      ) {
+        const newCard = {
+          ...currentDeck[0],
+          faceDown: false,
+          isNewlyDealt: true,
+          isFlipping: false,
+        }
+        currentDealerHand.push(newCard)
+        currentDeck = currentDeck.slice(1)
+      }
+
+      setDealer((prev) => ({
+        ...prev,
+        hand: currentDealerHand,
+        isStanding: true,
+      }))
+      setDeck(currentDeck)
+      setPhase('result')
+      setTimeout(() => resolveHand(currentDealerHand), 1000)
     }
-
-    setDealer((prev) => ({
-      ...prev,
-      hand: currentDealerHand,
-      isStanding: true,
-    }))
-    setDeck(currentDeck)
-    setPhase('result')
-    setTimeout(() => resolveHand(currentDealerHand), 1000)
   }
 
   function resolveBustHand() {
@@ -333,10 +622,6 @@ export default function BlackJack() {
     // Use the passed dealerHand if provided, otherwise use the current dealer state
     const finalDealerHand = dealerHand || dealer.hand
     const dealerValue = calculateHandValue(finalDealerHand)
-
-    // Debug logging to verify dealer hand calculation
-    console.log('Dealer final hand:', finalDealerHand)
-    console.log('Dealer value:', dealerValue)
 
     let msg = ''
     let playerChips = player.chips
@@ -462,48 +747,12 @@ export default function BlackJack() {
             </h2>
             <div className={`${styles.dealerHand} ${styles.overlapping}`}>
               {dealer?.hand.map((card, idx) => (
-                <div
-                  key={idx}
-                  className={`${styles.card} ${styles.cardOverlapping}`}
-                  style={{
-                    marginLeft: idx > 0 ? cardOffset : '0',
-                    zIndex: idx + 1,
-                  }}
-                >
-                  <Image
-                    src={getCardSvgPath(card)}
-                    alt={`${card.rank} of ${card.suit}`}
-                    fill
-                    sizes='100vw'
-                    style={{ objectFit: 'cover' }}
-                    priority
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Deck Display */}
-          <div className={styles.deckContainer}>
-            <div className={styles.deckStack}>
-              {/* Create 52 stacked cards */}
-              {Array.from({ length: 52 }, (_, idx) => (
-                <div
-                  key={idx}
-                  className={styles.deckCard}
-                  style={{
-                    top: `${idx * 0.2}px`,
-                    zIndex: 52 - idx,
-                  }}
-                >
-                  <Image
-                    src='/assets/img/cards/card_back.jpg'
-                    alt='Card back'
-                    fill
-                    sizes='100px'
-                    style={{ objectFit: 'cover' }}
-                  />
-                </div>
+                <AnimatedCard
+                  key={`${card.suit}-${card.rank}-${idx}`}
+                  card={card}
+                  idx={idx}
+                  cardOffset={cardOffset}
+                />
               ))}
             </div>
           </div>
@@ -513,27 +762,18 @@ export default function BlackJack() {
             <h2 className={`${styles.handTitle} text-sm sm:text-lg`}>
               Your Hand ({calculateHandValue(player?.hand ?? [])})
             </h2>
-            <div className={`${styles.playerHand} ${styles.overlapping}`}>
+            <motion.div
+              className={`${styles.playerHand} ${styles.overlapping}`}
+            >
               {player?.hand.map((card, idx) => (
-                <div
-                  key={idx}
-                  className={`${styles.card} ${styles.cardOverlapping}`}
-                  style={{
-                    marginLeft: idx > 0 ? cardOffset : '0',
-                    zIndex: idx + 1,
-                  }}
-                >
-                  <Image
-                    src={getCardSvgPath(card)}
-                    alt={`${card.rank} of ${card.suit}`}
-                    fill
-                    sizes='100vw'
-                    style={{ objectFit: 'cover' }}
-                    priority
-                  />
-                </div>
+                <AnimatedCard
+                  key={`${card.suit}-${card.rank}-${idx}`}
+                  card={card}
+                  idx={idx}
+                  cardOffset={cardOffset}
+                />
               ))}
-            </div>
+            </motion.div>
           </div>
         </div>
 
