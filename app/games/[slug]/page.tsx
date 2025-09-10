@@ -42,11 +42,11 @@ export default async function GamePage({ params }: { params: PageParams }) {
   if (!game) return notFound()
 
   return (
-    <div className='space-y-8'>
-      <header className='flex items-center justify-between'>
+    <div className='sm:space-y-8'>
+      <header className='hidden sm:flex items-center justify-between p-4 sm:px-0'>
         <div>
           <h1 className='text-2xl font-bold flex items-center gap-2'>
-            {game.emoji} {game.title}
+        {game.emoji} {game.title}
           </h1>
           <p className='text-slate-400'>{game.description}</p>
         </div>

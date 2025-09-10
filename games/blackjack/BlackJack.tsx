@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react'
 
+import AnimatedNumber from '@/components/AnimatedNumber'
 import Image from 'next/image'
-import { motion } from 'framer-motion'
+import { motion } from 'motion/react'
 import styles from './blackjack.module.css'
-import { time } from 'console'
 
 // Card types
 const SUITS = ['hearts', 'diamonds', 'clubs', 'spades'] as const
@@ -76,17 +76,27 @@ function AnimatedCard({
   idx,
   cardOffset,
   style,
+  flyFrom,
 }: {
   card: Card
   idx: number
   cardOffset: string
   style?: React.CSSProperties
+  flyFrom?: { x: number; y: number }
 }) {
   const isNewCard = card.isNewlyDealt
   const isFlipping = card.isFlipping
 
-  // Flying animation: Card enters from the right
-  const flyingAnimation = isNewCard ? { x: 300, opacity: 0, scale: 0.8 } : false
+  // Flying animation: Card enters from the 3 o'clock position (right side)
+  const flyingAnimation = isNewCard
+    ? {
+        x: flyFrom?.x || 400,
+        y: flyFrom?.y || 0,
+        opacity: 0,
+        scale: 0.8,
+        rotate: 15,
+      }
+    : false
 
   // Flipping animation: Use card.faceDown to determine target rotation
   // When faceDown=true, show card back (0 degrees)
@@ -95,25 +105,26 @@ function AnimatedCard({
 
   return (
     <motion.div
-      className={`${styles.card} ${styles.cardOverlapping}`}
+      className={`${styles.card}`}
       style={{
         marginLeft: idx > 0 ? cardOffset : '0',
         zIndex: idx + 1,
         ...style,
       }}
       initial={flyingAnimation}
-      animate={{ x: 0, opacity: 1, scale: 1 }}
+      animate={{ x: 0, y: 0, opacity: 1, scale: 1, rotate: 0 }}
       transition={{
         type: 'spring',
-        stiffness: 300,
-        damping: 30,
-        mass: 0.8,
-        delay: isNewCard ? idx * 0.2 : 0,
+        stiffness: 250,
+        damping: 25,
+        mass: 1,
+        delay: idx * 0.15, // Stagger cards based on their position
       }}
     >
       {/* Flip wrapper */}
       <motion.div
         style={{
+          transition: 'transform 0.2s',
           transformStyle: 'preserve-3d',
           width: '100%',
           height: '100%',
@@ -122,7 +133,7 @@ function AnimatedCard({
         }}
         animate={{ rotateY: targetRotation }}
         transition={{
-          duration: isFlipping ? 0.6 : 0,
+          duration: isFlipping ? 0.2 : 0,
           ease: 'easeInOut',
         }}
       >
@@ -135,7 +146,6 @@ function AnimatedCard({
             backfaceVisibility: 'hidden',
             WebkitBackfaceVisibility: 'hidden',
             transform: 'rotateY(0deg)', // Explicitly set front face
-            transformStyle: 'preserve-3d',
           }}
         >
           <Image
@@ -156,7 +166,6 @@ function AnimatedCard({
             backfaceVisibility: 'hidden',
             WebkitBackfaceVisibility: 'hidden',
             transform: 'rotateY(180deg)', // Explicitly set back face
-            transformStyle: 'preserve-3d',
           }}
         >
           <Image
@@ -299,6 +308,10 @@ export default function BlackJack() {
   })
   const [deck, setDeck] = useState<Card[]>([])
   const [message, setMessage] = useState('')
+
+  // Displayed hand values (updated with animation delay)
+  const [displayedPlayerValue, setDisplayedPlayerValue] = useState(0)
+  const [displayedDealerValue, setDisplayedDealerValue] = useState(0)
   const [phase, setPhase] = useState<
     'bet' | 'init' | 'deal' | 'player' | 'dealer' | 'result'
   >('bet')
@@ -309,6 +322,7 @@ export default function BlackJack() {
   const [showResetDropdown, setShowResetDropdown] = useState(false)
   const [isClosingDropdown, setIsClosingDropdown] = useState(false)
   const [isDealing, setIsDealing] = useState(false)
+  const [hasDealerRevealedHand, setHasDealerRevealedHand] = useState(false)
   const initDoneRef = useRef(false)
   const dealDoneRef = useRef(false)
 
@@ -372,6 +386,7 @@ export default function BlackJack() {
     // Enter init phase; deck setup and bet deduction handled by effects
     initDoneRef.current = false
     dealDoneRef.current = false
+    setHasDealerRevealedHand(false)
     setPhase('init')
     setMessage('Shuffling deck...')
   }
@@ -396,9 +411,64 @@ export default function BlackJack() {
       bet: betAmount,
       isStanding: false,
     }))
+    // Reset displayed hand values
+    setDisplayedPlayerValue(0)
+    setDisplayedDealerValue(0)
     setPhase('deal')
     setMessage('Dealing cards...')
   }, [phase])
+
+  // Update displayed hand values after card animations complete
+  useEffect(() => {
+    const hasNewPlayerCards = player.hand.some((card) => card.isNewlyDealt)
+    const hasNewDealerCards = dealer.hand.some((card) => card.isNewlyDealt)
+
+    // Handle empty hands
+    if (player.hand.length === 0) {
+      setDisplayedPlayerValue(0)
+    }
+    if (dealer.hand.length === 0) {
+      setDisplayedDealerValue(0)
+    }
+
+    // Calculate the maximum delay for staggered cards
+    const maxPlayerDelay =
+      player.hand.length > 0
+        ? Math.max(0, ...player.hand.map((_, idx) => idx * 0.15))
+        : 0
+    const maxDealerDelay =
+      dealer.hand.length > 0
+        ? Math.max(0, ...dealer.hand.map((_, idx) => idx * 0.15))
+        : 0
+
+    // Update player displayed value
+    if (hasNewPlayerCards) {
+      const updateDelay = (maxPlayerDelay + 0.8) * 1000 // Animation delay + spring duration
+      const timer = setTimeout(() => {
+        setDisplayedPlayerValue(calculateHandValue(player.hand))
+      }, updateDelay)
+      return () => clearTimeout(timer)
+    } else if (!hasNewPlayerCards && player.hand.length > 0) {
+      // Immediate update if no new cards (e.g., during flipping)
+      setDisplayedPlayerValue(calculateHandValue(player.hand))
+    }
+
+    // Update dealer displayed value (but only update if not in player phase to keep the "?" display)
+    if (hasNewDealerCards && phase !== 'player') {
+      const updateDelay = (maxDealerDelay + 0.8) * 1000 // Animation delay + spring duration
+      const timer = setTimeout(() => {
+        setDisplayedDealerValue(calculateHandValue(dealer.hand))
+      }, updateDelay)
+      return () => clearTimeout(timer)
+    } else if (
+      !hasNewDealerCards &&
+      dealer.hand.length > 0 &&
+      phase !== 'player'
+    ) {
+      // Immediate update if no new cards (e.g., during flipping)
+      setDisplayedDealerValue(calculateHandValue(dealer.hand))
+    }
+  }, [player.hand, dealer.hand, phase])
 
   // Clear animation flags after animation completes
   useEffect(() => {
@@ -481,7 +551,7 @@ export default function BlackJack() {
     dealDoneRef.current = true
     if (deck.length < 4) return
     let cancelled = false
-    setIsDealing(true)
+    // setIsDealing(true)
     ;(async () => {
       await dealCard('player', true)
       if (cancelled) return
@@ -492,7 +562,7 @@ export default function BlackJack() {
       // Dealer second card face-down
       await dealCard('dealer', false)
       if (cancelled) return
-      setIsDealing(false)
+      // setIsDealing(false)
       setPhase('player')
       setMessage('Your turn!')
     })()
@@ -516,7 +586,7 @@ export default function BlackJack() {
     if (value > 21) {
       setMessage('Busted!')
       setPhase('result')
-      setTimeout(() => resolveBustHand(), 1000)
+      setTimeout(() => resolveHand(), 1000)
     }
   }
 
@@ -525,96 +595,54 @@ export default function BlackJack() {
     setPhase('dealer')
     setMessage("Dealer's turn...")
     setTimeout(() => dealerTurn(), 1000)
+    console.log('dealer show hand: ', hasDealerRevealedHand)
   }
 
   function dealerTurn() {
-    // Step 1: Check for face-down cards and start flip animation
-    const hasFaceDownCards = dealer.hand.some((card) => card.faceDown)
-
-    if (hasFaceDownCards) {
-      // Step 1: Start flipping animation AND change faceDown state simultaneously
-      setDealer((prev) => ({
-        ...prev,
-        hand: prev.hand.map((card) => ({
-          ...card,
-          faceDown: false, // Flip to face up
-          isFlipping: card.faceDown ? true : false, // Only animate cards that were face down
-          isNewlyDealt: false,
-        })),
-      }))
-
-      // Step 2: After flip animation completes, proceed with dealer logic
-      setTimeout(() => {
-        let currentDeck = [...deck]
-        let currentDealerHand = dealer.hand.map((card) => ({
-          ...card,
-          faceDown: false,
-          isFlipping: false,
-          isNewlyDealt: false,
-        }))
-
-        while (
-          calculateHandValue(currentDealerHand) < 17 &&
-          currentDeck.length > 0
-        ) {
-          const newCard = {
-            ...currentDeck[0],
-            faceDown: false,
-            isNewlyDealt: true,
-            isFlipping: false,
-          }
-          currentDealerHand.push(newCard)
-          currentDeck = currentDeck.slice(1)
-        }
-
-        setDealer((prev) => ({
-          ...prev,
-          hand: currentDealerHand,
-          isStanding: true,
-        }))
-        setDeck(currentDeck)
-        setPhase('result')
-        setTimeout(() => resolveHand(currentDealerHand), 1000)
-      }, 600) // Wait for full flip animation to complete
-    } else {
-      // No face-down cards, proceed directly with dealer logic
-      let currentDeck = [...deck]
-      let currentDealerHand = dealer.hand.map((card) => ({
+    // Start flipping animation AND change faceDown state simultaneously
+    setDealer((prev) => ({
+      ...prev,
+      hand: prev.hand.map((card) => ({
         ...card,
+        faceDown: false, // Flip to face up
+        isFlipping: card.faceDown ? true : false, // Only animate cards that were face down
         isNewlyDealt: false,
-      }))
+      })),
+    }))
 
-      while (
-        calculateHandValue(currentDealerHand) < 17 &&
-        currentDeck.length > 0
-      ) {
-        const newCard = {
-          ...currentDeck[0],
-          faceDown: false,
-          isNewlyDealt: true,
-          isFlipping: false,
-        }
-        currentDealerHand.push(newCard)
-        currentDeck = currentDeck.slice(1)
+    let currentDeck = [...deck]
+    let currentDealerHand = dealer.hand.map((card) => ({
+      ...card,
+      faceDown: false,
+      isFlipping: false,
+      isNewlyDealt: false,
+    }))
+
+    // Dealer hits until reaching 17 or higher
+    while (
+      calculateHandValue(currentDealerHand) < 17 &&
+      currentDeck.length > 0
+    ) {
+      const newCard = {
+        ...currentDeck[0],
+        faceDown: false,
+        isNewlyDealt: true,
+        isFlipping: false,
       }
-
-      setDealer((prev) => ({
-        ...prev,
-        hand: currentDealerHand,
-        isStanding: true,
-      }))
-      setDeck(currentDeck)
-      setPhase('result')
-      setTimeout(() => resolveHand(currentDealerHand), 1000)
+      currentDealerHand.push(newCard)
+      currentDeck = currentDeck.slice(1)
     }
-  }
 
-  function resolveBustHand() {
-    // Player busted - immediate loss, no dealer turn needed
-    setLosses((prev) => prev + 1)
-    setBetAmount(0)
-    setPhase('bet')
-    setMessage('You busted! Dealer wins.')
+    setDealer((prev) => ({
+      ...prev,
+      hand: currentDealerHand,
+      isStanding: true,
+    }))
+    setDeck(currentDeck)
+    setHasDealerRevealedHand(true)
+    setPhase('result')
+
+    setTimeout(() => resolveHand(currentDealerHand), 1000)
   }
 
   function resolveHand(dealerHand?: Card[]) {
@@ -626,8 +654,10 @@ export default function BlackJack() {
     let msg = ''
     let playerChips = player.chips
 
-    // Player should not bust here since busts are handled immediately
-    if (dealerValue > 21) {
+    if (playerValue > 21) {
+      msg = 'You busted! Dealer wins.'
+      setLosses((prev) => prev + 1)
+    } else if (dealerValue > 21) {
       msg = 'Dealer busted! You win.'
       playerChips += player.bet * 2
       setWins((prev) => prev + 1)
@@ -672,15 +702,15 @@ export default function BlackJack() {
   }
 
   return (
-    <div className='min-h-screen p-2 sm:p-4'>
-      <div className='w-full max-w-4xl bg-green-900 mx-auto rounded-3xl shadow-lg p-2 sm:p-4 relative'>
+    <div className='min-h-screen sm:p-4'>
+      <div className='w-full sm:max-w-4xl bg-green-900 mx-auto rounded-none sm:rounded-3xl shadow-lg p-2 sm:p-4 relative'>
         {/* Player Stats - Responsive positioning */}
-        <div className='absolute top-2 right-2 sm:top-4 sm:right-4 text-white shadow-lg min-w-[160px] sm:min-w-[200px] z-40'>
+        <div className='absolute top-2 right-2 sm:top-4 sm:right-4 text-white shadow-lg w-[60px] min-w-[50px] sm:min-w-[200px] z-40'>
           <div className='relative p-2 sm:p-4 border-b border-slate-700 rounded-lg bg-slate-800 z-50'>
             <h3 className='text-yellow-400 text-sm sm:text-lg font-bold text-center mb-2 sm:mb-3'>
               Player Stats
             </h3>
-            <div className='grid grid-cols-2 gap-2 sm:gap-4 text-center'>
+            <div className='grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-center'>
               <div>
                 <div className='text-green-400 text-sm sm:text-xl font-bold'>
                   ${player?.chips ?? 1000}
@@ -739,11 +769,7 @@ export default function BlackJack() {
           {/* Dealer Hand */}
           <div className={`${styles.handSection} mb-4 sm:mb-8`}>
             <h2 className={`${styles.handTitle} text-sm sm:text-lg`}>
-              Dealer (
-              {phase === 'player'
-                ? '?'
-                : calculateHandValue(dealer?.hand ?? [])}
-              )
+              Dealer ({hasDealerRevealedHand ? displayedDealerValue : '?'})
             </h2>
             <div className={`${styles.dealerHand} ${styles.overlapping}`}>
               {dealer?.hand.map((card, idx) => (
@@ -752,15 +778,25 @@ export default function BlackJack() {
                   card={card}
                   idx={idx}
                   cardOffset={cardOffset}
+                  flyFrom={{ x: 350, y: 150 }}
                 />
               ))}
             </div>
           </div>
 
+          <div className='bg-green-900 border-4 border-yellow-500 rounded-full w-24 h-24 sm:w-28 sm:h-28 flex flex-col justify-center items-center shadow-lg m-1 sm:m-2'>
+            <label className='text-yellow-400 text-center text-sm sm:text-base translate-y-1 '>
+              Current Bet
+            </label>
+            <span className='text-center text-white text-base sm:text-lg font-bold translate-y-1 block h-[1.5em] overflow-hidden'>
+              $<AnimatedNumber value={betAmount} />
+            </span>
+          </div>
+
           {/* Player Hand */}
           <div className={`${styles.handSection} mt-4 sm:mt-8`}>
             <h2 className={`${styles.handTitle} text-sm sm:text-lg`}>
-              Your Hand ({calculateHandValue(player?.hand ?? [])})
+              Your Hand ({displayedPlayerValue})
             </h2>
             <motion.div
               className={`${styles.playerHand} ${styles.overlapping}`}
@@ -771,102 +807,84 @@ export default function BlackJack() {
                   card={card}
                   idx={idx}
                   cardOffset={cardOffset}
+                  flyFrom={{ x: 350, y: -150 }}
                 />
               ))}
             </motion.div>
           </div>
         </div>
 
-        <div className='flex flex-col lg:grid lg:grid-cols-2 gap-4'>
-          {/* Betting Section */}
-          <div
-            className={`${styles.betSection} p-2 sm:p-6 justify-self-center lg:justify-self-end order-2 lg:order-1`}
-          >
-            <div className='bg-green-900 border-4 border-yellow-500 rounded-full w-24 h-24 sm:w-32 sm:h-32 flex flex-col justify-center items-center shadow-lg'>
-              <label
-                className={`${styles.betLabel} mb-1 text-center text-xs sm:text-sm`}
-              >
-                Current Bet
-              </label>
-              <span className='text-center text-white text-sm sm:text-lg mt-1 sm:mt-2'>
-                $ {betAmount}
-              </span>
+        <div className='grid grid-cols-2 items-end sm:grid-cols-1 sm:gap-4'>
+          <div className='flex items-center justify-center p-4'>
+            {/* Betting Buttons */}
+            <div className='text-center'>
+              <div className='text-white text-base mb-2'>Place Your Bet:</div>
+              <div className='grid grid-cols-2 text-xl gap-2'>
+                <button
+                  onClick={() => addToBet(1)}
+                  disabled={phase !== 'bet'}
+                  className={styles.betButton}
+                >
+                  +$1
+                </button>
+                <button
+                  onClick={() => addToBet(10)}
+                  disabled={phase !== 'bet'}
+                  className={styles.betButton}
+                >
+                  +$10
+                </button>
+                <button
+                  onClick={() => addToBet(50)}
+                  disabled={phase !== 'bet'}
+                  className={styles.betButton}
+                >
+                  +$50
+                </button>
+                <button
+                  onClick={() => addToBet(100)}
+                  disabled={phase !== 'bet'}
+                  className={styles.betButton}
+                >
+                  +$100
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Control Buttons */}
-          <div className='flex flex-col order-1 lg:order-2'>
-            {/* Betting Buttons */}
-            <div className='text-center lg:text-left px-2 sm:px-4 text-sm sm:text-base'>
-              Place Your Bet:
-            </div>
-            <div className={`${styles.betButtons} p-2 sm:p-4`}>
-              <button
-                onClick={() => addToBet(1)}
-                disabled={phase !== 'bet'}
-                className={styles.betButton}
-              >
-                +$1
-              </button>
-              <button
-                onClick={() => addToBet(10)}
-                disabled={phase !== 'bet'}
-                className={styles.betButton}
-              >
-                +$10
-              </button>
-              <button
-                onClick={() => addToBet(50)}
-                disabled={phase !== 'bet'}
-                className={styles.betButton}
-              >
-                +$50
-              </button>
-              <button
-                onClick={() => addToBet(100)}
-                disabled={phase !== 'bet'}
-                className={styles.betButton}
-              >
-                +$100
-              </button>
-            </div>
+          {/* Control Buttons - Right Side */}
+          <div className='flex flex-col justify-center items-center p-4'>
             {phase === 'bet' ? (
-              <div className='flex flex-col justify-center items-center mb-2 sm:mb-4'>
-                <div
-                  className={`${styles.controlPanel} flex-col sm:flex-row gap-2 sm:gap-4`}
+              <div className={`flex flex-col sm:flex-row gap-2 sm:gap-4`}>
+                <button
+                  onClick={startHand}
+                  className={`${styles.button} ${styles.dealButton} text-base w-36 sm:w-32 py-3 sm:py-2 sm:text-sm`}
                 >
-                  <button
-                    onClick={startHand}
-                    className={`${styles.button} ${styles.dealButton} w-full sm:w-auto py-3 sm:py-2 text-base sm:text-sm`}
-                  >
-                    Deal
-                  </button>
-                  <button
-                    onClick={() => setAutoPlayEnabled((v) => !v)}
-                    className={`${styles.button} ${styles.autoPlayButton} ${
-                      !autoPlayEnabled ? styles.disabled : ''
-                    } w-full sm:w-auto py-3 sm:py-2 text-base sm:text-sm`}
-                    title='Toggle Auto Play (basic strategy)'
-                  >
-                    {autoPlayEnabled ? 'Auto Play: ON' : 'Auto Play: OFF'}
-                  </button>
-                </div>
+                  Deal
+                </button>
+                <button
+                  onClick={() => setAutoPlayEnabled((v) => !v)}
+                  className={`${styles.button} ${styles.autoPlayButton} ${
+                    !autoPlayEnabled ? styles.disabled : ''
+                  } w-36 sm:w-auto py-1 sm:py-2 text-base`}
+                  title='Toggle Auto Play (basic strategy)'
+                >
+                  Auto Play:{autoPlayEnabled ? ' ON' : ' OFF'}
+                </button>
               </div>
             ) : (
               <div className='min-h-[60px]'>
                 {phase === 'player' && (
-                  <div
-                    className={`${styles.controlPanel} flex-col sm:flex-row gap-2 sm:gap-4`}
-                  >
+                  <div className={`flex flex-col sm:flex-row gap-2 sm:gap-4`}>
                     <button
                       onClick={hit}
-                      className={`${styles.button} ${styles.hitButton} w-full sm:w-auto py-3 sm:py-2 text-base sm:text-sm`}
+                      className={`${styles.button} ${styles.hitButton} w-36 sm:w-auto py-3 sm:py-2 text-base sm:text-sm`}
                     >
                       Hit
                     </button>
                     <button
                       onClick={stand}
-                      className={`${styles.button} ${styles.standButton} w-full sm:w-auto py-3 sm:py-2 text-base sm:text-sm`}
+                      className={`${styles.button} ${styles.standButton} w-36 sm:w-auto py-3 sm:py-2 text-base sm:text-sm`}
                     >
                       Stand
                     </button>

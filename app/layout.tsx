@@ -59,8 +59,7 @@ export default function RootLayout({
         {/* Skip to content for keyboard users */}
         <a href='#main' className='sr-only focus:not-sr-only focus:absolute focus:m-4 focus:rounded focus:bg-black/60 focus:text-white focus:px-3 focus:py-1 focus:shadow focus:outline-none'>Skip to content</a>
         <Header />
-        <div aria-hidden className='h-4'></div>
-        <main id='main' className='flex-1 w-full max-w-6xl mx-auto px-4'>
+        <main id='main' className='flex-1 w-full max-w-6xl mx-auto px-0 sm:px-4'>
           {children}
         </main>
         <Footer />

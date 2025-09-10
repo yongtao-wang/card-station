@@ -11,9 +11,6 @@ body {
   font-family: ui-rounded, system-ui, -apple-system, Segoe UI, Roboto, Noto Sans, Ubuntu, Cantarell, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji";
 }
 
-.card {
-  @apply rounded-xl bg-white/70 backdrop-blur shadow-sm border border-black/5;
-}
 
 .btn {
   @apply inline-flex items-center gap-2 rounded-lg bg-teal-500 text-white px-4 py-2 font-semibold shadow hover:bg-teal-600 active:translate-y-px transition;
