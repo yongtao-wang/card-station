@@ -16,6 +16,23 @@
   }
 }
 
+.cardFlipWrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.2s;
+  perspective: '1000px';
+}
+
+.cardSide {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
 /* Player hand area */
 .playerHand {
   display: flex;
@@ -116,8 +133,16 @@
 
 .buttonGroup {
   display: flex;
+  flex-direction: column;
   gap: 8px;
   justify-content: center;
+}
+
+@media (min-width: 640px) {
+  .buttonGroup {
+    gap: 12px;
+    flex-direction: row;
+  }
 }
 
 .confirmButton {
@@ -170,7 +195,7 @@
 }
 
 .button {
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 0.75rem;
   border-radius: 0.5rem;
   font-weight: 600;
   color: white;
@@ -178,7 +203,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
   touch-action: manipulation;
-  min-height: 44px;
+  height: 48px;
 }
 
 @media (min-width: 640px) {

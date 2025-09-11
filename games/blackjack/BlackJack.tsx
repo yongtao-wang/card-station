@@ -123,14 +123,7 @@ function AnimatedCard({
     >
       {/* Flip wrapper */}
       <motion.div
-        style={{
-          transition: 'transform 0.2s',
-          transformStyle: 'preserve-3d',
-          width: '100%',
-          height: '100%',
-          position: 'relative',
-          perspective: '1000px', // Add perspective for better 3D effect
-        }}
+        className={`${styles.cardFlipWrapper}`}
         animate={{ rotateY: targetRotation }}
         transition={{
           duration: isFlipping ? 0.2 : 0,
@@ -139,13 +132,9 @@ function AnimatedCard({
       >
         {/* Card back */}
         <div
+          className={`${styles.cardSide}`}
           style={{
-            position: 'absolute',
-            width: '100%',
-            height: '100%',
-            backfaceVisibility: 'hidden',
-            WebkitBackfaceVisibility: 'hidden',
-            transform: 'rotateY(0deg)', // Explicitly set front face
+            transform: 'rotateY(0deg)',
           }}
         >
           <Image
@@ -159,13 +148,9 @@ function AnimatedCard({
         </div>
         {/* Card face */}
         <div
+          className={`${styles.cardSide}`}
           style={{
-            position: 'absolute',
-            width: '100%',
-            height: '100%',
-            backfaceVisibility: 'hidden',
-            WebkitBackfaceVisibility: 'hidden',
-            transform: 'rotateY(180deg)', // Explicitly set back face
+            transform: 'rotateY(180deg)',
           }}
         >
           <Image
@@ -290,7 +275,6 @@ export default function BlackJack() {
     return () => window.removeEventListener('resize', updateCardOffset)
   }, [])
 
-  // const [players, setPlayers] = useState<Player[]>([])
   const [player, setPlayer] = useState<Player>({
     id: 'player',
     name: 'You',
@@ -321,7 +305,6 @@ export default function BlackJack() {
   const [losses, setLosses] = useState(0)
   const [showResetDropdown, setShowResetDropdown] = useState(false)
   const [isClosingDropdown, setIsClosingDropdown] = useState(false)
-  const [isDealing, setIsDealing] = useState(false)
   const [hasDealerRevealedHand, setHasDealerRevealedHand] = useState(false)
   const initDoneRef = useRef(false)
   const dealDoneRef = useRef(false)
@@ -749,7 +732,7 @@ export default function BlackJack() {
               } -translate-y-3`}
             >
               <p>Reset balance to $1000 to continue playing.</p>
-              <div className={styles.buttonGroup}>
+              <div className='flex justify-content-center mt-1'>
                 <button
                   onClick={resetChips}
                   className={styles.confirmButton}
@@ -853,12 +836,12 @@ export default function BlackJack() {
           </div>
 
           {/* Control Buttons - Right Side */}
-          <div className='flex flex-col justify-center items-center p-4'>
+          <div className='flex flex-col justify-center items-center p-4 min-h-[48px] sm:min-h-[96px]'>
             {phase === 'bet' ? (
-              <div className={`flex flex-col sm:flex-row gap-2 sm:gap-4`}>
+              <div className={`${styles.buttonGroup}`}>
                 <button
                   onClick={startHand}
-                  className={`${styles.button} ${styles.dealButton} text-base w-36 sm:w-32 py-3 sm:py-2 sm:text-sm`}
+                  className={`${styles.button} ${styles.dealButton} w-36 sm:w-32 py-3 sm:py-2`}
                 >
                   Deal
                 </button>
@@ -866,25 +849,25 @@ export default function BlackJack() {
                   onClick={() => setAutoPlayEnabled((v) => !v)}
                   className={`${styles.button} ${styles.autoPlayButton} ${
                     !autoPlayEnabled ? styles.disabled : ''
-                  } w-36 sm:w-auto py-1 sm:py-2 text-base`}
+                  } w-36 sm:w-[160px] py-1 sm:py-2 text-base`}
                   title='Toggle Auto Play (basic strategy)'
                 >
                   Auto Play:{autoPlayEnabled ? ' ON' : ' OFF'}
                 </button>
               </div>
             ) : (
-              <div className='min-h-[60px]'>
+              <div>
                 {phase === 'player' && (
-                  <div className={`flex flex-col sm:flex-row gap-2 sm:gap-4`}>
+                  <div className={`${styles.buttonGroup}`}>
                     <button
                       onClick={hit}
-                      className={`${styles.button} ${styles.hitButton} w-36 sm:w-auto py-3 sm:py-2 text-base sm:text-sm`}
+                      className={`${styles.button} ${styles.hitButton} w-36 sm:w-24 py-3 sm:py-2 `}
                     >
                       Hit
                     </button>
                     <button
                       onClick={stand}
-                      className={`${styles.button} ${styles.standButton} w-36 sm:w-auto py-3 sm:py-2 text-base sm:text-sm`}
+                      className={`${styles.button} ${styles.standButton} w-36 sm:w-24 py-3 sm:py-2`}
                     >
                       Stand
                     </button>
@@ -906,7 +889,7 @@ export default function BlackJack() {
         </div>
       </div>
       {/* Blackjack Game Introduction */}
-      <div className='mt-4 sm:mt-10 bg-white/80 rounded-lg p-3 sm:p-6 max-w-3xl mx-auto shadow-lg text-gray-900'>
+      <div className='w-full sm:max-w-4xl mx-auto mb-6 sm:my-10 bg-white/80 sm:rounded-lg p-4 sm:p-6 shadow-lg text-gray-900'>
         <h2 className='text-xl sm:text-2xl font-bold mb-2'>
           Blackjack 1v1 Online – Rules & How to Play
         </h2>
