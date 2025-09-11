@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 
 export default function HomePage() {
   return (
-    <div className='space-y-8'>
+    <div className='space-y-8 sm:py-12'>
       <section className='relative overflow-hidden sm:rounded-2xl bg-gradient-to-br from-[#19162e] via-[#1f1b3f] to-[#0d0b1c] text-white ring-1 ring-white/10 shadow-xl p-6 md:p-10 max-w-[64rem] mx-auto'>
         {/* ambient glow */}
         <div aria-hidden className='pointer-events-none absolute inset-0 -z-10'>

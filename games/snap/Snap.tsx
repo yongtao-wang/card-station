@@ -304,7 +304,12 @@ export default function Snap() {
 
   return (
     <div className={`${styles.game} sm:p-4`}>
-      <div className={`${styles.board}`}>
+      <motion.div
+        className={`${styles.board}`}
+        initial={{ x: -100, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+      >
         <h1 className={`${styles.gameTitle}`}>Snap!</h1>
 
         {/* Game Info */}
@@ -575,10 +580,15 @@ export default function Snap() {
             <p className='text-xl text-yellow-300'>{winner} Win!</p>
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* Instructions */}
-      <div className={`${styles.howToPlay}`}>
+      <motion.div
+        className={`${styles.howToPlay}`}
+        initial={{ y: 100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+      >
         <h2 className='text-2xl font-bold mb-2'>How to Play Snap! Game</h2>
         <p className='mb-4'>
           Snap! is a fast-paced card game where players try to be the first to
@@ -603,7 +613,7 @@ export default function Snap() {
         <p className='text-sm text-gray-600'>
           Keep your eyes peeled and your reflexes sharp! Good luck!
         </p>
-      </div>
+      </motion.div>
     </div>
   )
 }
