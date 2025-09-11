@@ -685,8 +685,13 @@ export default function BlackJack() {
   }
 
   return (
-    <div className='min-h-screen sm:p-4'>
-      <div className='w-full sm:max-w-4xl bg-green-900 mx-auto rounded-none sm:rounded-3xl shadow-lg p-2 sm:p-4 relative'>
+    <div className='sm:p-4'>
+      <motion.div
+        className={`${styles.board}`}
+        initial={{ x: -100, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+      >
         {/* Player Stats - Responsive positioning */}
         <div className='absolute top-2 right-2 sm:top-4 sm:right-4 text-white shadow-lg w-[60px] min-w-[50px] sm:min-w-[200px] z-40'>
           <div className='relative p-2 sm:p-4 border-b border-slate-700 rounded-lg bg-slate-800 z-50'>
@@ -745,9 +750,7 @@ export default function BlackJack() {
           )}
         </div>
 
-        <h1 className='text-2xl sm:text-3xl font-bold text-white text-center p-4 sm:p-8'>
-          Blackjack 1v1
-        </h1>
+        <h1 className={`${styles.gameTitle}`}>Blackjack 1v1</h1>
         <div className='flex flex-col items-center m-2 sm:m-4 min-h-[300px] sm:min-h-[360px]'>
           {/* Dealer Hand */}
           <div className={`${styles.handSection} mb-4 sm:mb-8`}>
@@ -887,9 +890,14 @@ export default function BlackJack() {
               : 'Manual play'}
           </p>
         </div>
-      </div>
+      </motion.div>
       {/* Blackjack Game Introduction */}
-      <div className='w-full sm:max-w-4xl mx-auto mb-6 sm:my-10 bg-white/80 sm:rounded-lg p-4 sm:p-6 shadow-lg text-gray-900'>
+      <motion.div
+        className={`${styles.howToPlay}`}
+        initial={{ y: 100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+      >
         <h2 className='text-xl sm:text-2xl font-bold mb-2'>
           Blackjack 1v1 Online – Rules & How to Play
         </h2>
@@ -958,7 +966,7 @@ export default function BlackJack() {
           blackjack for fun, learn the rules, and test your luck against the
           dealer AI. Good luck!
         </p>
-      </div>
+      </motion.div>
     </div>
   )
 }

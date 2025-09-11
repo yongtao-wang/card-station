@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <div className='space-y-8'>
-      <section className='relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#19162e] via-[#1f1b3f] to-[#0d0b1c] text-white ring-1 ring-white/10 shadow-xl p-6 md:p-10 max-w-[64rem] mx-auto'>
+      <section className='relative overflow-hidden sm:rounded-2xl bg-gradient-to-br from-[#19162e] via-[#1f1b3f] to-[#0d0b1c] text-white ring-1 ring-white/10 shadow-xl p-6 md:p-10 max-w-[64rem] mx-auto'>
         {/* ambient glow */}
         <div aria-hidden className='pointer-events-none absolute inset-0 -z-10'>
           <div className='absolute -top-24 -left-24 h-96 w-96 rounded-full bg-fuchsia-500/20 blur-3xl' />
@@ -90,7 +90,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-      <section className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-[64rem] mx-auto'>
+      <section className='grid grid-cols-2 lg:grid-cols-3 px-4 sm:px-0 gap-3 sm:gap-6 max-w-[64rem] mx-auto'>
         {games.map((g) => (
           <Link key={g.slug} href={`/games/${g.slug}`}>
             <GameCard

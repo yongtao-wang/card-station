@@ -1,14 +1,26 @@
 /* Holdem Game Styles */
+.board {
+  @apply w-full sm:max-w-4xl bg-green-900 mx-auto rounded-none sm:rounded-3xl shadow-lg p-2 sm:p-4 relative
+}
+
+.howToPlay {
+  @apply w-full sm:max-w-4xl mx-auto mb-6 sm:my-10 bg-white/80 sm:rounded-lg p-4 sm:p-6 shadow-lg text-gray-900
+}
 
 .card {
-  --card-width: 96px;
-  --card-height: 144px;
-  width: var(--card-width);
-  height: var(--card-height);
-  border-radius: 8px;
-  overflow: hidden;
+  width: 64px;
+  height: 93px;
+  border-radius: 6px;
   position: relative;
+  border: none;
   perspective: 1000px;
+}
+
+@media (min-width: 640px) {
+  .card {
+    width: 96px;
+    height: 139px;
+  }
 }
 
 .cardInner {
@@ -57,8 +69,21 @@
     transform: translateX(0) scale(1);
     opacity: 1;
   }
+
   100% {
     transform: translateX(50px) scale(1);
     opacity: 0;
   }
+}
+
+.button {
+  @apply rounded-lg font-bold text-white px-2 py-1 sm:px-4 sm:py-2 transition shadow sm:shadow-lg touch-manipulation w-28 sm:w-32 h-12
+}
+
+.buttonLarge {
+  @apply rounded-lg font-bold text-white px-1 py-1 sm:px-2 sm:py-2 transition shadow sm:shadow-lg touch-manipulation w-32 sm:w-36 h-12
+}
+
+.buttonGroup {
+  @apply flex flex-wrap gap-2 justify-center mt-4
 }

@@ -1,13 +1,26 @@
 /* Snap Card Game Animations and Styles */
+.game {
+  --card-width: 64px;
+  --card-height: 93px;
+}
 
-/* Game Layout */
-.gameBoard {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  max-width: 800px;
-  margin: 0 auto;
+@media (min-width: 640px) {
+  .game {
+    --card-width: 96px;
+    --card-height: 139px;
+  }
+}
+
+.board {
+  @apply w-full flex flex-col sm:max-w-4xl bg-green-900 mx-auto rounded-none sm:rounded-3xl shadow-lg p-2 sm:p-4 relative
+}
+
+.howToPlay {
+  @apply w-full sm:max-w-4xl mx-auto mb-6 sm:my-10 bg-white/80 sm:rounded-lg p-4 sm:p-6 shadow-lg text-gray-900
+}
+
+.gameTitle {
+  @apply text-2xl sm:text-3xl font-bold text-white text-center p-4 sm:p-8
 }
 
 .playerSlotsContainer {
@@ -27,8 +40,8 @@
 
 .cardSlot {
   position: relative;
-  width: 80px;
-  height: 120px;
+  width: var(--card-width);
+  height: var(--card-height);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -37,17 +50,17 @@
 .cardSlot::before {
   content: '';
   position: absolute;
-  width: 80px;
-  height: 116px;
+  width: var(--card-width);
+  height: var(--card-height);
   border: 2px dashed #9ca3af;
   border-radius: 8px;
   background: rgba(156, 163, 175, 0.1);
-  z-index: 1;
+  z-index: 0;
 }
 
 .emptySlot {
-  width: 80px;
-  height: 120px;
+  width: var(--card-width);
+  height: var(--card-height);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -61,22 +74,17 @@
   font-weight: 500;
 }
 
-.cardImage {
-  position: relative;
-  width: 80px;
-  height: 120px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  z-index: 2;
-}
-
-.flyingCard {
+.card {
+  width: var(--card-width);
+  height: var(--card-height);
+  border-radius: 6px;
   position: absolute;
+  border: none;
+  perspective: 1000px;
+  object-fit: cover;
+  z-index: 10;
   top: 0;
   left: 0;
-  width: 80px;
-  height: 120px;
-  z-index: 10;
 }
 
 /* Animations */
@@ -187,8 +195,8 @@
 
 .cardDeck {
   position: relative;
-  width: 80px;
-  height: 120px;
+  width: var(--card-width);
+  height: var(--card-height);
   border-radius: 8px;
   border: 2px dashed #cbd5e1;
   display: flex;
@@ -199,8 +207,8 @@
 
 .cardPosition {
   position: absolute;
-  width: 80px;
-  height: 120px;
+  width: var(--card-width);
+  height: var(--card-height);
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);

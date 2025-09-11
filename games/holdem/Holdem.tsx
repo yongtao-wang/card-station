@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import Image from 'next/image'
+import { motion } from 'motion/react'
 import styles from './holdem.module.css'
 
 // Card types
@@ -892,21 +893,16 @@ export default function Holdem() {
   }, [])
 
   return (
-    <div className='min-h-screen bg-green-800 p-4'>
-      <div className='max-w-4xl mx-auto'>
-        <h1 className='text-3xl font-bold text-white text-center mb-6'>
+    <div className='sm:p-4'>
+      <motion.div
+        className={`${styles.board}`}
+        initial={{ x: -100, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+      >
+        <h1 className='text-2xl sm:text-3xl font-bold text-white text-center p-4 sm:p-8'>
           Texas Hold&apos;em
         </h1>
-
-        {/* Game Info */}
-        <div className='bg-green-700 rounded-lg p-4 mb-4 text-white text-center'>
-          <p className='text-lg font-semibold'>Pot: ${gameState.pot}</p>
-          <p className='text-sm'>Phase: {gameState.phase}</p>
-          {gameMessage && (
-            <p className='text-yellow-300 mt-2 text-3xl'>{gameMessage}</p>
-          )}
-        </div>
-
         {/* Community Cards */}
         <div className='text-center mb-6'>
           <h3 className='text-white text-lg mb-2'>Community Cards</h3>
@@ -943,7 +939,7 @@ export default function Holdem() {
               <p>Chips: ${bot.chips}</p>
               <p>Current Bet: ${bot.currentBet}</p>
             </div>
-            <div className='flex space-x-2' style={{ height: '144px' }}>
+            <div className='flex min-h-24 sm:min-h-36 space-x-2'>
               {bot.cards.map((card, index) => (
                 <div
                   key={index}
@@ -990,7 +986,7 @@ export default function Holdem() {
               <p>Chips: ${player.chips}</p>
               <p>Current Bet: ${player.currentBet}</p>
             </div>
-            <div className='flex space-x-2' style={{ height: '144px' }}>
+            <div className='flex min-h-24 sm:min-h-36 space-x-2'>
               {player.cards.map((card, index) => (
                 <div
                   key={index}
@@ -1014,155 +1010,158 @@ export default function Holdem() {
 
         {/* Action Buttons */}
         {gameState.phase !== 'gameOver' && gameState.phase !== 'showdown' && (
-          <div className='flex justify-center space-x-4 mb-4'>
-            <button
-              onClick={() => playerAction('fold')}
-              disabled={gameState.currentPlayer !== 'player'}
-              className='bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-semibold'
-            >
-              Fold
-            </button>
-
-            {callAmount === 0 ? (
+          <div className='flex flex-wrap gap-4 items-center justify-center'>
+            {/* First row: Fold, Check/Call */}
+            <div className='flex gap-4 w-full sm:w-auto justify-center mb-2 sm:mb-0'>
               <button
-                onClick={() => playerAction('check')}
+                onClick={() => playerAction('fold')}
                 disabled={gameState.currentPlayer !== 'player'}
-                className='bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-semibold'
+                className={`${styles.button} bg-red-500 hover:bg-red-600 disabled:bg-gray-400`}
               >
-                Check
+                Fold
               </button>
-            ) : (
+
+              {callAmount === 0 ? (
+                <button
+                  onClick={() => playerAction('check')}
+                  disabled={gameState.currentPlayer !== 'player'}
+                  className={`${styles.button} bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-400`}
+                >
+                  Check
+                </button>
+              ) : (
+                <button
+                  onClick={() => playerAction('call')}
+                  disabled={
+                    gameState.currentPlayer !== 'player' ||
+                    player.chips < callAmount
+                  }
+                  className={`${styles.button} bg-green-500 hover:bg-green-600 disabled:bg-gray-400`}
+                >
+                  Call ${callAmount}
+                </button>
+              )}
+            </div>
+            {/* Second row: Raise, All In */}
+            <div className='flex gap-4 w-full sm:w-auto justify-center'>
               <button
-                onClick={() => playerAction('call')}
+                onClick={() =>
+                  playerAction('raise', callAmount + gameState.minRaise)
+                }
                 disabled={
                   gameState.currentPlayer !== 'player' ||
-                  player.chips < callAmount
+                  player.chips < callAmount + gameState.minRaise
                 }
-                className='bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-semibold'
+                className={`${styles.button} bg-purple-500 hover:bg-purple-600 disabled:bg-gray-400`}
               >
-                Call ${callAmount}
+                Raise
               </button>
-            )}
 
-            <button
-              onClick={() =>
-                playerAction('raise', callAmount + gameState.minRaise)
-              }
-              disabled={
-                gameState.currentPlayer !== 'player' ||
-                player.chips < callAmount + gameState.minRaise
-              }
-              className='bg-purple-500 hover:bg-purple-600 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-semibold'
-            >
-              Raise
-            </button>
-
-            <button
-              onClick={() => playerAction('allIn')}
-              disabled={
-                gameState.currentPlayer !== 'player' || player.chips === 0
-              }
-              className='bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-semibold'
-            >
-              All In
-            </button>
+              <button
+                onClick={() => playerAction('allIn')}
+                disabled={
+                  gameState.currentPlayer !== 'player' || player.chips === 0
+                }
+                className={`${styles.button} bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400`}
+              >
+                All In
+              </button>
+            </div>
           </div>
         )}
 
         {/* New Hand Button */}
         {(gameState.phase === 'gameOver' || gameState.phase === 'showdown') && (
-          <div className='text-center flex justify-center gap-4'>
+          <div className='flex flex-col sm:flex-row text-center items-center justify-center gap-4'>
             <button
               onClick={initGame}
-              className='bg-lime-500 hover:bg-lime-6700 text-white px-8 py-3 rounded-lg font-semibold text-lg'
+              className={`${styles.buttonLarge} bg-lime-500 hover:bg-lime-600 `}
             >
               Deal New Hand
             </button>
             <button
               onClick={resetChips}
-              className='bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-lg font-semibold text-lg'
+              className={`${styles.buttonLarge} bg-red-500 hover:bg-red-600 `}
             >
               Reset Chips
             </button>
           </div>
         )}
 
-        {/* Current Turn Indicator */}
-        {gameState.currentPlayer &&
-          gameState.phase !== 'gameOver' &&
-          gameState.phase !== 'showdown' && (
-            <div className='text-center text-white mt-4'>
-              <p className='text-lg'>
-                {gameState.currentPlayer === 'player'
-                  ? 'Your turn'
-                  : "Bot's turn"}
-              </p>
-            </div>
+        {/* Game Info */}
+        <div className='bg-green-700 rounded-lg p-4 my-8 text-white text-center'>
+          {gameMessage && (
+            <p className='text-yellow-300 mt-2 text-xl'>{gameMessage}</p>
           )}
-
-        {/* Texas Hold'em Introduction & How to Play */}
-        <div className='mt-10 bg-white/80 rounded-lg p-6 max-w-3xl mx-auto shadow-lg text-gray-900'>
-          <h2 className='text-2xl font-bold mb-2'>
-            Texas Hold'em Poker: Rules & How to Play
-          </h2>
-          <p className='mb-4'>
-            Welcome to <strong>Texas Hold'em Poker</strong> – the world's most
-            popular poker game! Play online against our bot and learn the rules,
-            strategies, and tips for winning at Texas Hold'em. This game is
-            perfect for beginners and advanced players alike.
-          </p>
-          <h3 className='text-xl font-semibold mb-2'>
-            How to Play Texas Hold'em
-          </h3>
-          <ul className='list-disc ml-6 mb-4'>
-            <li>Each player is dealt two private cards (hole cards).</li>
-            <li>Five community cards are dealt face up in the center.</li>
-            <li>
-              Players use any combination of five cards to make the best poker
-              hand.
-            </li>
-            <li>Betting rounds: Preflop, Flop, Turn, River, and Showdown.</li>
-            <li>Actions: Fold, Check, Call, Raise, or go All-In.</li>
-            <li>
-              The winner is the player with the best hand at showdown, or the
-              last player remaining after all others fold.
-            </li>
-          </ul>
-          <h3 className='text-xl font-semibold mb-2'>
-            Chip Reset & Game Continuation
-          </h3>
-          <p className='mb-4'>
-            Both players will start again with 1000 chips. If you run out of
-            chips, you can reset the chips by clicking the{' '}
-            <span className='font-semibold text-red-600'>Reset Chips</span>{' '}
-            button. The bot will be automatically refilled to 1000 chips if it
-            runs out. You can continue playing without losing your progress.
-          </p>
-          <h3 className='text-xl font-semibold mb-2'>
-            About the Bot's Strategy
-          </h3>
-          <p className='mb-4'>
-            The bot you play against uses a simplified poker strategy based on
-            hand strength and probability. Before the flop, it groups hands by
-            strength and acts accordingly. After the flop, it estimates its
-            chances of winning using a <strong>Monte Carlo simulation</strong>:
-            it runs hundreds of random trials to simulate possible outcomes,
-            calculating its equity (chance to win) against your possible hand.
-            The bot then compares its equity to the pot odds and chooses actions
-            like fold, call, raise, or all-in, aiming to make mathematically
-            sound decisions.
-          </p>
-          <p className='mb-4'>
-            This approach makes the bot challenging and educational, giving you
-            a realistic poker experience while demonstrating how probability and
-            simulation can guide decision-making in games of chance.
-          </p>
-          <p className='text-sm text-gray-600'>
-            Enjoy this interactive Texas Hold'em Poker game and improve your
-            skills. Good luck at the tables!
-          </p>
+          <p className='text-lg font-semibold'>Pot: ${gameState.pot}</p>
+          <p className='text-sm'>Phase: {gameState.phase}</p>
         </div>
-      </div>
+      </motion.div>
+      {/* Texas Hold'em Introduction & How to Play */}
+      <motion.div
+        className={`${styles.howToPlay}`}
+        initial={{ y: 100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+      >
+        <h2 className='text-2xl font-bold mb-2'>
+          Texas Hold'em Poker: Rules & How to Play
+        </h2>
+        <p className='mb-4'>
+          Welcome to <strong>Texas Hold'em Poker</strong> – the world's most
+          popular poker game! Play online against our bot and learn the rules,
+          strategies, and tips for winning at Texas Hold'em. This game is
+          perfect for beginners and advanced players alike.
+        </p>
+        <h3 className='text-xl font-semibold mb-2'>
+          How to Play Texas Hold'em
+        </h3>
+        <ul className='list-disc ml-6 mb-4'>
+          <li>Each player is dealt two private cards (hole cards).</li>
+          <li>Five community cards are dealt face up in the center.</li>
+          <li>
+            Players use any combination of five cards to make the best poker
+            hand.
+          </li>
+          <li>Betting rounds: Preflop, Flop, Turn, River, and Showdown.</li>
+          <li>Actions: Fold, Check, Call, Raise, or go All-In.</li>
+          <li>
+            The winner is the player with the best hand at showdown, or the last
+            player remaining after all others fold.
+          </li>
+        </ul>
+        <h3 className='text-xl font-semibold mb-2'>
+          Chip Reset & Game Continuation
+        </h3>
+        <p className='mb-4'>
+          Both players will start again with 1000 chips. If you run out of
+          chips, you can reset the chips by clicking the{' '}
+          <span className='font-semibold text-red-600'>Reset Chips</span>{' '}
+          button. The bot will be automatically refilled to 1000 chips if it
+          runs out. You can continue playing without losing your progress.
+        </p>
+        <h3 className='text-xl font-semibold mb-2'>About the Bot's Strategy</h3>
+        <p className='mb-4'>
+          The bot you play against uses a simplified poker strategy based on
+          hand strength and probability. Before the flop, it groups hands by
+          strength and acts accordingly. After the flop, it estimates its
+          chances of winning using a <strong>Monte Carlo simulation</strong>: it
+          runs hundreds of random trials to simulate possible outcomes,
+          calculating its equity (chance to win) against your possible hand. The
+          bot then compares its equity to the pot odds and chooses actions like
+          fold, call, raise, or all-in, aiming to make mathematically sound
+          decisions.
+        </p>
+        <p className='mb-4'>
+          This approach makes the bot challenging and educational, giving you a
+          realistic poker experience while demonstrating how probability and
+          simulation can guide decision-making in games of chance.
+        </p>
+        <p className='text-sm text-gray-600'>
+          Enjoy this interactive Texas Hold'em Poker game and improve your
+          skills. Good luck at the tables!
+        </p>
+      </motion.div>
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import './globals.css'
+import '../styles/globals.css'
 import Footer from '@/components/Footer'
 import Header from '@/components/Header'
 import { Analytics } from '@vercel/analytics/react'
@@ -57,9 +57,17 @@ export default function RootLayout({
           <div className='absolute bottom-[-6rem] right-[-4rem] h-80 w-80 rounded-full bg-cyan-400/20 blur-3xl' />
         </div>
         {/* Skip to content for keyboard users */}
-        <a href='#main' className='sr-only focus:not-sr-only focus:absolute focus:m-4 focus:rounded focus:bg-black/60 focus:text-white focus:px-3 focus:py-1 focus:shadow focus:outline-none'>Skip to content</a>
+        <a
+          href='#main'
+          className='sr-only focus:not-sr-only focus:absolute focus:m-4 focus:rounded focus:bg-black/60 focus:text-white focus:px-3 focus:py-1 focus:shadow focus:outline-none'
+        >
+          Skip to content
+        </a>
         <Header />
-        <main id='main' className='flex-1 w-full max-w-6xl mx-auto px-0 sm:px-4'>
+        <main
+          id='main'
+          className='flex-1 w-full max-w-6xl mx-auto px-0 sm:px-4'
+        >
           {children}
         </main>
         <Footer />
