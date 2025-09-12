@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import Image from 'next/image'
+import { motion } from 'motion/react'
 import styles from './flipcard.module.css'
 
 export type Card = {
@@ -27,7 +28,7 @@ const SPRITES = Array.from(
   (_, i) => `/assets/img/sprites/sprite_${i + 1}.png`
 )
 
-const STORAGE_KEY = 'flip-cardie:flip-card:history'
+const STORAGE_KEY = 'card_station:flipcard:history'
 
 type HistoryEntry = {
   date: string
@@ -181,8 +182,8 @@ export default function FlipCard() {
   }
 
   return (
-    <div className='space-y-4'>
-      <div className='card p-4 flex flex-wrap items-center gap-3 justify-between'>
+    <div className='py-0 sm:space-y-4'>
+      <div className='w-full bg-amber-100 rounded-none sm:rounded-lg sm:max-w-4xl mx-auto p-4 flex flex-wrap items-center gap-3 justify-between'>
         <div className='flex items-center gap-3'>
           <label className='text-sm text-slate-700'>Board Size</label>
           <select
@@ -215,54 +216,112 @@ export default function FlipCard() {
         </div>
       </div>
 
-      <div
-        className='grid gap-3 justify-center'
-        style={{
-          gridTemplateColumns: `repeat(${size}, 100px)`,
-        }}
-      >
-        {cards.map((c) => (
-          <button
-            key={c.id}
-            onClick={() => onFlip(c)}
-            className={`${styles.card} ${
-              c.flipped || c.matched ? styles.flipped : ''
-            }`}
-            aria-label={c.flipped ? `Card symbol ${c.symbol}` : 'Hidden card'}
-          >
-            <div className={styles.cardInner}>
-              <div className={styles.cardFront}>
-                {/* Card back - shown when not flipped */}
+      <div className={`${styles.board}`}>
+        <div className='mb-2 min-h-20'>
+          {isFinished && (
+            <div className='p-4'>
+              <div className='font-bold mb-1 text-emerald-200'>
+                🎉 Congratulations! You matched them all!
               </div>
-              <div className={styles.cardBack}>
-                <Image
-                  src={c.symbol}
-                  alt='Card symbol'
-                  width={80}
-                  height={80}
-                  className='w-4/5 h-4/5 object-contain'
-                />
+              <div className='text-sm text-emerald-400'>
+                You finished in {moves} moves and {elapsed} seconds.
+                {best && best.moves === moves && best.seconds === elapsed && (
+                  <span className='block font-semibold'>
+                    This is your best score!
+                  </span>
+                )}
               </div>
             </div>
-          </button>
-        ))}
+          )}
+        </div>
+        <div
+          className='grid gap-3 justify-center items-center mx-auto pb-20'
+          style={{
+            gridTemplateColumns: `repeat(${size}, 1fr)`,
+          }}
+        >
+          {cards.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => onFlip(c)}
+              className={`${styles.card} ${
+                c.flipped || c.matched ? styles.flipped : ''
+              }`}
+              aria-label={c.flipped ? `Card symbol ${c.symbol}` : 'Hidden card'}
+            >
+              <div className={styles.cardInner}>
+                <div className={styles.cardFront}>
+                  {/* Card back - shown when not flipped */}
+                </div>
+                <div className={styles.cardBack}>
+                  <Image
+                    src={c.symbol}
+                    alt='Card symbol'
+                    width={80}
+                    height={80}
+                    className='w-4/5 h-4/5 object-contain'
+                  />
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
       </div>
 
-      {isFinished && (
-        <div className='card p-4 border-emerald-300/40 ring-1 ring-emerald-300/30 bg-emerald-50'>
-          <div className='font-bold mb-1 text-emerald-800'>
-            🎉 Congratulations! You matched them all!
+      {/* Introduction / How to Play (styled like other games) */}
+      <motion.div
+        className={`${styles.howToPlay}`}
+        initial={{ y: 40, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.4 }}
+      >
+        <h2 className='text-xl sm:text-2xl font-bold mb-3 text-center'>
+          Flip Card — Memory Match Game
+        </h2>
+
+        <div className='text-base sm:text-lg space-y-3'>
+          <p>
+            🎴 <strong>Overview:</strong> Flip Card is a classic memory matching
+            game where you reveal pairs of cards to find identical symbols. It
+            trains memory, attention and pattern recognition while being fun and
+            relaxing.
+          </p>
+
+          <h3 className='font-semibold mb-2'>How to Play</h3>
+          <ul className='text-base space-y-1'>
+            <li>• Select a board size (e.g., 4×4 or 6×6).</li>
+            <li>• Click a card to flip it and reveal the symbol.</li>
+            <li>• Try to remember the symbol and find its matching pair.</li>
+            <li>
+              • Matched pairs remain face-up; unmatched flip back after a short
+              delay.
+            </li>
+            <li>
+              • Finish the board in as few moves and time as possible to set a
+              high score.
+            </li>
+          </ul>
+
+          <h3 className='font-semibold mb-2'>Scoring & Tips</h3>
+          <div className='text-base space-y-1'>
+            <p>
+              • <strong>Moves</strong>: Lower move counts are better.
+            </p>
+            <p>
+              • <strong>Time</strong>: Try to finish quickly — both metrics are
+              saved locally.
+            </p>
+            <p>
+              • <strong>Strategy</strong>: Focus on small areas of the board and
+              memorize symbol locations rather than random flipping.
+            </p>
           </div>
-          <div className='text-sm text-emerald-700'>
-            You finished in {moves} moves and {elapsed} seconds.
-            {best && best.moves === moves && best.seconds === elapsed && (
-              <span className='block font-semibold'>
-                This is your best score!
-              </span>
-            )}
+
+          <div className='text-sm text-center text-slate-600 mt-2'>
+            Ready to improve your memory? Pick a board size and start matching!
           </div>
         </div>
-      )}
+      </motion.div>
     </div>
   )
 }

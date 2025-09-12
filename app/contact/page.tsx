@@ -34,7 +34,7 @@ export const metadata: Metadata = {
 export default function ContactPage() {
   return (
     <div className='space-y-8'>
-      {/* FAQ结构化数据 */}
+      {/* JSON-LD structured data for FAQ */}
       <Script id="faq-structured-data" type="application/ld+json">
         {JSON.stringify({
           '@context': 'https://schema.org',

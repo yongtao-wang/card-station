@@ -460,26 +460,75 @@ export default function HighLow() {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.4, delay: 0.1 }}
       >
-        <h2 className='text-lg sm:text-xl font-bold mb-3 text-center'>
-          How to Play High Low
+        <h2 className='text-xl sm:text-2xl font-bold mb-4 text-center text-gray-800'>
+          Master the High Low Card Game
         </h2>
-        <div className='text-sm sm:text-base space-y-2'>
-          <p>
-            🎯 <strong>Objective:</strong> Guess whether the next card will be
-            higher or lower than the current card.
-          </p>
-          <p>
-            📊 <strong>Scoring:</strong> Each correct guess earns 1 point. Ties
-            count as correct!
-          </p>
-          <p>
-            🔄 <strong>Game Over:</strong> One wrong guess ends the game. Try to
-            beat your best streak!
-          </p>
-          <p>
-            🃏 <strong>Card Values:</strong> 2 is lowest, Ace is highest (2, 3,
-            4, 5, 6, 7, 8, 9, 10, J, Q, K, A)
-          </p>
+        
+        <div className='text-sm sm:text-base space-y-4 leading-relaxed'>
+          <div className='bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500'>
+            <p className='mb-2'>
+              <strong>🎯 Game Overview:</strong> High Low is a thrilling card prediction game that tests your intuition and probability skills. 
+              You'll be presented with one face-up card and must predict whether the next hidden card will have a higher or lower value. 
+              It's simple to learn but challenging to master!
+            </p>
+          </div>
+
+          <div className='grid md:grid-cols-2 gap-4'>
+            <div className='bg-green-50 p-4 rounded-lg'>
+              <h3 className='font-bold text-green-800 mb-2'>🎮 How to Play</h3>
+              <ul className='space-y-1 text-green-700'>
+                <li>• Look at the current card shown</li>
+                <li>• Decide if the next card will be higher or lower</li>
+                <li>• Click "Higher" or "Lower" to make your guess</li>
+                <li>• Watch the card flip to reveal your fate!</li>
+                <li>• Continue your streak as long as possible</li>
+              </ul>
+            </div>
+
+            <div className='bg-orange-50 p-4 rounded-lg'>
+              <h3 className='font-bold text-orange-800 mb-2'>🃏 Card Values</h3>
+              <p className='text-orange-700 mb-2'>From lowest to highest:</p>
+              <div className='text-orange-700 font-mono text-sm'>
+                2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → J → Q → K → A
+              </div>
+              <p className='text-xs text-orange-600 mt-2'>Ace is always high (value 14)</p>
+            </div>
+          </div>
+
+          <div className='bg-yellow-50 p-4 rounded-lg border-l-4 border-yellow-500'>
+            <h3 className='font-bold text-yellow-800 mb-2'>📊 Scoring & Strategy</h3>
+            <div className='text-yellow-700 space-y-2'>
+              <p><strong>Points:</strong> Earn 1 point for each correct guess. Ties count as correct!</p>
+              <p><strong>Streaks:</strong> Chain together correct guesses to build impressive streaks.</p>
+              <p><strong>Strategy Tip:</strong> Pay attention to probability! If you see a 3, the next card is very likely to be higher. 
+              If you see a King, it's probably going to be lower.</p>
+            </div>
+          </div>
+
+          <div className='bg-red-50 p-4 rounded-lg border-l-4 border-red-500'>
+            <h3 className='font-bold text-red-800 mb-2'>⚠️ Game Over Conditions</h3>
+            <div className='text-red-700 space-y-2'>
+              <p><strong>Wrong Guess:</strong> One incorrect prediction ends your current run.</p>
+              <p><strong>Deck Exhausted:</strong> Successfully guess through the entire deck for ultimate victory!</p>
+              <p><strong>Challenge:</strong> Can you beat your personal best streak? The game saves your highest score locally.</p>
+            </div>
+          </div>
+
+          <div className='bg-purple-50 p-4 rounded-lg text-center'>
+            <h3 className='font-bold text-purple-800 mb-2'>� Pro Tips</h3>
+            <div className='text-purple-700 text-sm space-y-1'>
+              <p>• Cards 2-6: Usually guess "Higher" • Cards J-A: Usually guess "Lower"</p>
+              <p>• Cards 7-9: These are tricky! Consider what cards you've already seen</p>
+              <p>• Remember: This game is about probability, not luck. Think before you guess!</p>
+            </div>
+          </div>
+
+          <div className='text-center mt-4'>
+            <p className='text-gray-600 italic'>
+              Ready to test your prediction skills? Start guessing and see how long you can keep your streak alive! 
+              The cards are shuffled randomly each game, so every round is a fresh challenge.
+            </p>
+          </div>
         </div>
       </motion.div>
     </div>

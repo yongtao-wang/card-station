@@ -9,12 +9,12 @@ export default function Header() {
           href='/'
           className='font-extrabold text-lg md:text-xl text-white hover:opacity-90 inline-flex items-center gap-2'
         >
-          <span className='inline-grid place-items-center h-7 w-7 rounded-md bg-gradient-to-br from-fuchsia-500 to-indigo-500 text-white'>
+          <span className='inline-grid place-items-center h-10 w-10 rounded-full bg-gradient-to-br from-fuchsia-500 to-indigo-500 text-white'>
             <Image
               src='/assets/icons/android-chrome-192x192.png'
               alt='Card Station Logo'
-              width={28}
-              height={28}
+              width={32}
+              height={32}
             />
           </span>
           <span>Card Station</span>

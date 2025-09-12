@@ -22,6 +22,36 @@ export const metadata: Metadata = {
         width: 1200,
         height: 630,
         alt: 'All Card Games - Free Online Card & Memory Games'
+      },
+      {
+        url: site.url ? `${site.url}/assets/img/og/blackjack_og.webp` : '/assets/img/og/blackjack_og.webp',
+        width: 1200,
+        height: 630,
+        alt: 'Blackjack - Free Online Card Game'
+      },
+      {
+        url: site.url ? `${site.url}/assets/img/og/flipcard_og.webp` : '/assets/img/og/flipcard_og.webp',
+        width: 1200,
+        height: 630,
+        alt: 'Flip Card - Free Online Memory Game'
+      },
+      {
+        url: site.url ? `${site.url}/assets/img/og/war_og.webp` : '/assets/img/og/war_og.webp',
+        width: 1200,
+        height: 630,
+        alt: 'War - Free Online Card Game'
+      },
+      {
+        url: site.url ? `${site.url}/assets/img/og/highlow_og.webp` : '/assets/img/og/highlow_og.webp',
+        width: 1200,
+        height: 630,
+        alt: 'High Low - Free Online Card Game'
+      },
+      {
+        url: site.url ? `${site.url}/assets/img/og/snap_og.webp` : '/assets/img/og/snap_og.webp',
+        width: 1200,
+        height: 630,
+        alt: 'Snap - Free Online Card Game'
       }
     ],
   },
@@ -76,7 +106,7 @@ export default function GamesPage() {
             <GameCard
               title={game.title}
               description={`${game.description} Play ${game.title} online free, no download required.`}
-              emoji={game.emoji}
+              slug={game.slug}
             />
           </Link>
         ))}
@@ -100,7 +130,7 @@ export default function GamesPage() {
           <div>
             <h3 className='font-semibold mb-2'>🧠 Memory Training</h3>
             <p>
-              <Link href="/games/flip-card" className="underline hover:text-white">Flip Card</Link> and memory-based games help enhance cognitive function
+              <Link href="/games/flipcard" className="underline hover:text-white">Flip Card</Link> and memory-based games help enhance cognitive function
               and concentration through engaging gameplay.
             </p>
           </div>

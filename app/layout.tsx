@@ -27,7 +27,21 @@ export const metadata: Metadata = {
     'snap card game',
   ],
   authors: [{ name: 'Card Station' }],
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   icons: [{ rel: 'icon', url: '/favicon.ico' }],
+  alternates: { 
+    canonical: site.url || undefined 
+  },
   openGraph: {
     title: 'Card Station — Free Online Card Games',
     description:
@@ -35,6 +49,7 @@ export const metadata: Metadata = {
     url: site.url || undefined,
     siteName: 'Card Station',
     type: 'website',
+    locale: 'en_US',
   },
   twitter: {
     card: 'summary_large_image',

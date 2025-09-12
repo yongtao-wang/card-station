@@ -1,11 +1,29 @@
 /* Flip Card Memory Game Styles */
+.board {
+  @apply w-full flex flex-col sm:max-w-4xl bg-green-900 mx-auto rounded-none sm:rounded-3xl shadow-lg p-2 sm:p-4 relative min-h-[500px] sm:min-h-[600px]
+}
+
+.howToPlay {
+  @apply w-full sm:max-w-4xl mx-auto mb-6 sm:my-10 bg-white/80 sm:rounded-lg p-4 sm:p-6 shadow-lg text-gray-900
+}
+
+.gameTitle {
+  @apply text-2xl sm:text-3xl font-bold text-white text-center p-4 sm:p-8
+}
 
 .card {
   perspective: 1000px;
-  width: 90px;
-  height: 120px;
+  width: 64px;
+  height: 93px;
   cursor: pointer;
   transition: transform 0.1s;
+}
+
+@media (min-width: 640px) {
+  .card {
+    width: 90px;
+    height: 120px;
+  }
 }
 
 .card:hover {

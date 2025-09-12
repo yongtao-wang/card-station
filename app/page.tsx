@@ -20,11 +20,21 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: site.url ? `${site.url}/assets/img/og/holdem_og.webp` : '/assets/img/og/holdem_og.webp',
-        width: 1200,
-        height: 630,
-        alt: 'Card Station - Play Free Online Card Games'
-      }
+        url: site.url
+          ? `${site.url}/assets/img/og/holdem_og.webp`
+          : '/assets/img/og/holdem_og.webp',
+        width: 500,
+        height: 300,
+        alt: 'Card Station - Play Texas Hold\'em Free Online',
+      },
+      {
+        url: site.url
+          ? `${site.url}/assets/img/og/blackjack_og.webp`
+          : '/assets/img/og/blackjack_og.webp',
+        width: 500,
+        height: 300,
+        alt: "Card Station - Play Blackjack Free Online",
+      },
     ],
   },
   twitter: {
@@ -33,7 +43,11 @@ export const metadata: Metadata = {
       "Play Free Online Card Games (Blackjack, Hold'em, Memory) — Card Station",
     description:
       "Instant, free & fun mini card games: Blackjack, Texas Hold'em vs Bot, Flip Card memory game, High Low & Snap. Mobile-friendly & no signup required.",
-    images: [site.url ? `${site.url}/assets/img/og/holdem_og.webp` : '/assets/img/og/holdem_og.webp'],
+    images: [
+      site.url
+        ? `${site.url}/assets/img/og/holdem_og.webp`
+        : '/assets/img/og/holdem_og.webp',
+    ],
   },
 }
 
@@ -98,7 +112,7 @@ export default function HomePage() {
                 <span>Hold&apos;em</span>
               </Link>
               <Link
-                href='/games/flip-card'
+                href='/games/flipcard'
                 className='btn-shimmer aspect-[5/3] rounded-lg bg-gradient-to-br from-cyan-400/30 to-sky-400/20 ring-1 ring-white/10 flex flex-row items-center justify-center gap-2 text-sm font-semibold text-white/90'
               >
                 <span className='text-2xl'>🃏</span>
@@ -116,15 +130,9 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className='grid grid-cols-2 lg:grid-cols-3 px-4 sm:px-0 gap-3 sm:gap-6 max-w-[64rem] mx-auto'>
+      <section className='recommendation'>
         {games.map((g) => (
-          <Link key={g.slug} href={`/games/${g.slug}`}>
-            <GameCard
-              title={g.title}
-              description={g.description}
-              emoji={g.emoji}
-            />
-          </Link>
+          <GameCard key={g.slug} title={g.title} description={g.description} slug={g.slug} />
         ))}
       </section>
     </div>

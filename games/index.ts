@@ -7,7 +7,7 @@ export type GameMeta = {
 
 export const games: GameMeta[] = [
   {
-    slug: 'flip-card',
+    slug: 'flipcard',
     title: 'Flip Card',
     description: 'Match pairs in as few moves as possible.',
     emoji: '🃏',

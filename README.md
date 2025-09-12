@@ -1,6 +1,6 @@
 # Card Station
 
-A playful collection of flip-card themed mini games built with Next.js and Tailwind CSS.
+A playful collection of card games built with Next.js and Tailwind CSS.
 
 ## Features
 

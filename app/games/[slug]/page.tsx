@@ -1,5 +1,5 @@
 import BlackJack from '@/games/blackjack/BlackJack'
-import FlipCard from '@/games/flip-card/FlipCard'
+import FlipCard from '@/games/flipcard/FlipCard'
 import HighLow from '@/games/highlow/HighLow'
 import Holdem from '@/games/holdem/Holdem'
 import Link from 'next/link'
@@ -13,9 +13,9 @@ import { notFound } from 'next/navigation'
 import { site } from '@/lib/site'
 
 export async function generateMetadata(
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }>  }
 ): Promise<Metadata> {
-  const { slug } = params
+  const { slug } = await params
   const game = games.find(g => g.slug === slug)
   if (!game) return { title: 'Game Not Found' }
 
@@ -62,8 +62,8 @@ export async function generateMetadata(
   }
 }
 
-export default async function GamePage({ params }: { params: { slug: string } }) {
-  const { slug } = params
+export default async function GamePage({ params }: { params: Promise<{ slug: string }>  }) {
+  const { slug } = await params
   const game = games.find((g) => g.slug === slug)
   if (!game) return notFound()
 
@@ -104,7 +104,7 @@ export default async function GamePage({ params }: { params: { slug: string } })
         </Link>
       </header>
 
-      {game.slug === 'flip-card' && <FlipCard />}
+      {game.slug === 'flipcard' && <FlipCard />}
       {game.slug === 'holdem' && <Holdem />}
       {game.slug === 'war' && <War />}
       {game.slug === 'blackjack' && <BlackJack />}
