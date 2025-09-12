@@ -9,7 +9,32 @@ export const metadata: Metadata = {
     "Play Free Online Card Games (Blackjack, Hold'em, Memory) — Card Station",
   description:
     "Instant, free & fun mini card games: Blackjack, Texas Hold'em vs Bot, Flip Card memory game, High Low & Snap. Mobile-friendly & no signup required.",
-  alternates: { canonical: site.url || undefined },
+  alternates: { canonical: site.url ? `${site.url}/` : undefined },
+  openGraph: {
+    title:
+      "Play Free Online Card Games (Blackjack, Hold'em, Memory) — Card Station",
+    description:
+      "Instant, free & fun mini card games: Blackjack, Texas Hold'em vs Bot, Flip Card memory game, High Low & Snap. Mobile-friendly & no signup required.",
+    url: site.url ? `${site.url}/` : undefined,
+    siteName: 'Card Station',
+    type: 'website',
+    images: [
+      {
+        url: site.url ? `${site.url}/assets/img/og/holdem_og.webp` : '/assets/img/og/holdem_og.webp',
+        width: 1200,
+        height: 630,
+        alt: 'Card Station - Play Free Online Card Games'
+      }
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title:
+      "Play Free Online Card Games (Blackjack, Hold'em, Memory) — Card Station",
+    description:
+      "Instant, free & fun mini card games: Blackjack, Texas Hold'em vs Bot, Flip Card memory game, High Low & Snap. Mobile-friendly & no signup required.",
+    images: [site.url ? `${site.url}/assets/img/og/holdem_og.webp` : '/assets/img/og/holdem_og.webp'],
+  },
 }
 
 export default function HomePage() {
@@ -90,6 +115,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
       <section className='grid grid-cols-2 lg:grid-cols-3 px-4 sm:px-0 gap-3 sm:gap-6 max-w-[64rem] mx-auto'>
         {games.map((g) => (
           <Link key={g.slug} href={`/games/${g.slug}`}>

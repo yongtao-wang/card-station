@@ -5,23 +5,35 @@ import Holdem from '@/games/holdem/Holdem'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import Recommendation from '@/components/Recommendation'
+import Script from 'next/script'
 import Snap from '@/games/snap/Snap'
 import War from '@/games/war/War'
 import { games } from '@/games/index'
 import { notFound } from 'next/navigation'
 import { site } from '@/lib/site'
 
-type PageParams = Promise<{ slug: string }>
-
 export async function generateMetadata(
-  { params }: { params: PageParams }
+  { params }: { params: { slug: string } }
 ): Promise<Metadata> {
-  const { slug } = await params
+  const { slug } = params
   const game = games.find(g => g.slug === slug)
   if (!game) return { title: 'Game Not Found' }
+
   const title = `${game.title} — Play Free Online`
-  const description = game.description + ' Play it free on Card Station.'
+  const description = `${game.description} Play it free on Card Station.`
   const url = site.url ? `${site.url}/games/${game.slug}` : undefined
+  
+  // Fetch OG image based on game slug
+  const getOgImage = (gameSlug: string) => {
+    const ogImages: Record<string, string> = {
+      'holdem': '/assets/img/og/holdem_og.webp',
+      // Add more mappings as more games are added
+    }
+    return ogImages[gameSlug] || '/assets/img/og/holdem_og.webp' // default to holdem image
+  }
+
+  const ogImage = site.url ? `${site.url}${getOgImage(slug)}` : getOgImage(slug)
+
   return {
     title,
     description,
@@ -30,23 +42,57 @@ export async function generateMetadata(
       title,
       description,
       type: 'website',
-      url
+      url,
+      siteName: 'Card Station',
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: `${game.title} - Play Free Online Card Game`
+        }
+      ],
     },
-    twitter: { title, description }
+    twitter: { 
+      title, 
+      description, 
+      card: 'summary_large_image',
+      images: [ogImage],
+    },
   }
 }
 
-export default async function GamePage({ params }: { params: PageParams }) {
-  const { slug } = await params
+export default async function GamePage({ params }: { params: { slug: string } }) {
+  const { slug } = params
   const game = games.find((g) => g.slug === slug)
   if (!game) return notFound()
 
+  const getOgImage = (gameSlug: string) => {
+    const ogImages: Record<string, string> = {
+      'holdem': '/assets/img/og/holdem_og.webp',
+    }
+    return ogImages[gameSlug] || '/assets/img/og/holdem_og.webp'
+  }
+
+  const ogImageUrl = site.url ? `${site.url}${getOgImage(slug)}` : getOgImage(slug)
+
   return (
     <div className='sm:space-y-8'>
+      <Script id="game-jsonld" type="application/ld+json">
+        {JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'Game',
+          'name': game.title,
+          'description': game.description,
+          'url': `${site.url ? site.url : ''}/games/${game.slug}`,
+          'image': ogImageUrl
+        })}
+      </Script>
+
       <header className='hidden sm:flex items-center justify-between p-4 sm:px-0'>
         <div>
           <h1 className='text-2xl font-bold flex items-center gap-2'>
-        {game.emoji} {game.title}
+            {game.emoji} {game.title}
           </h1>
           <p className='text-slate-400'>{game.description}</p>
         </div>
