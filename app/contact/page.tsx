@@ -33,7 +33,7 @@ export const metadata: Metadata = {
 
 export default function ContactPage() {
   return (
-    <div className='space-y-8'>
+    <div className='space-y-8 mx-auto py-16 px-4 max-w-4xl'>
       {/* JSON-LD structured data for FAQ */}
       <Script id="faq-structured-data" type="application/ld+json">
         {JSON.stringify({

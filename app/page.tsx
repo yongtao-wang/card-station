@@ -104,26 +104,29 @@ export default function HomePage() {
               Now Trending
             </div>
             <div className='mt-3 grid grid-cols-3 gap-3'>
-              <Link
+                <Link
                 href='/games/holdem'
-                className='btn-shimmer aspect-[5/3] rounded-lg bg-gradient-to-br from-fuchsia-400/30 to-indigo-400/20 ring-1 ring-white/10 flex flex-row items-center justify-center gap-2 text-sm font-semibold text-white/90'
-              >
-                <span className='text-2xl'>♠️</span>
-                <span>Hold&apos;em</span>
-              </Link>
+                className='btn-shimmer aspect-[5/3] rounded-lg flex flex-row items-center justify-center gap-2 text-sm font-semibold text-white/90'
+                style={{
+                  background: `url('/assets/img/og/holdem_og.webp') center/cover no-repeat`
+                }}
+                >
+                </Link>
               <Link
                 href='/games/flipcard'
-                className='btn-shimmer aspect-[5/3] rounded-lg bg-gradient-to-br from-cyan-400/30 to-sky-400/20 ring-1 ring-white/10 flex flex-row items-center justify-center gap-2 text-sm font-semibold text-white/90'
+                className='btn-shimmer aspect-[5/3] rounded-lg flex flex-row items-center justify-center gap-2 text-sm font-semibold text-white/90'
+                style={{
+                  background: `url('/assets/img/og/flipcard_og.webp') center/cover no-repeat`
+                }}
               >
-                <span className='text-2xl'>🃏</span>
-                <span>Flip Card</span>
               </Link>
               <Link
                 href='/games/snap'
-                className='btn-shimmer aspect-[5/3] rounded-lg bg-gradient-to-br from-amber-400/30 to-rose-400/20 ring-1 ring-white/10 flex flex-row items-center justify-center gap-2 text-sm font-semibold text-white/90'
+                className='btn-shimmer aspect-[5/3] rounded-lg flex flex-row items-center justify-center gap-2 text-sm font-semibold text-white/90'
+                style={{
+                  background: `url('/assets/img/og/snap_og.webp') center/cover no-repeat`
+                }}
               >
-                <span className='text-2xl'>👋</span>
-                <span>Snap</span>
               </Link>
             </div>
           </div>
