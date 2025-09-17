@@ -9,7 +9,7 @@
       "request": "launch",
       "name": "Node Debug Next.js",
       "program": "${workspaceFolder}/node_modules/.bin/next",
-      "args": ["dev", "-p", "3000"],
+      "args": ["dev", "-p", "3999"],
       "cwd": "${workspaceFolder}",
       "skipFiles": ["<node_internals>/**"],
       "env": {
@@ -27,7 +27,7 @@
       "type": "chrome",
       "request": "launch",
       "name": "Chrome Debug Next.js",
-      "url": "http://localhost:3000",
+      "url": "http://localhost:3999",
       "webRoot": "${workspaceFolder}"
     }
   ],

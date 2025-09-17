@@ -1,33 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import Image from 'next/image'
+import { motion } from 'motion/react'
 import styles from './warcard.module.css'
 
-// Card types
-type Suit = 'hearts' | 'diamonds' | 'clubs' | 'spades'
-type Rank =
-  | '2'
-  | '3'
-  | '4'
-  | '5'
-  | '6'
-  | '7'
-  | '8'
-  | '9'
-  | '10'
-  | 'J'
-  | 'Q'
-  | 'K'
-  | 'A'
-interface Card {
-  suit: Suit
-  rank: Rank
-}
-
-const SUITS: Suit[] = ['hearts', 'diamonds', 'clubs', 'spades']
-const RANKS: Rank[] = [
+const SUITS = ['hearts', 'diamonds', 'clubs', 'spades'] as const
+const RANKS = [
   '2',
   '3',
   '4',
@@ -37,489 +17,451 @@ const RANKS: Rank[] = [
   '8',
   '9',
   '10',
-  'J',
-  'Q',
-  'K',
-  'A',
-]
+  'jack',
+  'queen',
+  'king',
+  'ace',
+] as const
 
-const CARD_WIDTH = '80'
-const CARD_HEIGHT = '110'
-const CARD_WIDTH_PX = CARD_WIDTH + 'px'
-const CARD_HEIGHT_PX = CARD_HEIGHT + 'px'
+type Suit = (typeof SUITS)[number]
+type Rank = (typeof RANKS)[number]
 
-// Create a standard 52-card deck
-function createDeck(): Card[] {
+interface Card {
+  suit: Suit
+  rank: Rank
+  value: number
+}
+
+type GameState = 'init' | 'playing' | 'war' | 'checking' | 'gameOver'
+const WAR_CARDS_COUNT = 5 // 1 original + 3 face down + 1 face up
+
+const createDeck = (): Card[] => {
   const deck: Card[] = []
-  for (const suit of SUITS) {
-    for (const rank of RANKS) {
-      deck.push({ suit, rank })
-    }
-  }
-  return deck
+  SUITS.forEach((suit) => {
+    RANKS.forEach((rank, index) => {
+      deck.push({ suit, rank, value: index + 2 }) // value from 2 to 14 (ace)
+    })
+  })
+  return shuffle(deck)
 }
 
-function shuffle(deck: Card[]): Card[] {
-  const arr = [...deck]
-  for (let i = arr.length - 1; i > 0; i--) {
+const shuffle = (array: Card[]): Card[] => {
+  const shuffled = [...array]
+  for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
-    ;[arr[i], arr[j]] = [arr[j], arr[i]]
+    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
   }
-  return arr
+  return shuffled
 }
 
-function getCardValue(rank: Rank): number {
-  if (rank === 'A') return 14
-  if (rank === 'K') return 13
-  if (rank === 'Q') return 12
-  if (rank === 'J') return 11
-  return parseInt(rank)
-}
+const cardBackImgUri = '/assets/img/cards/card_back.jpg'
 
-function getCardSvgPath(card: Card): string {
-  // Map rank and suit to filename, e.g. "ace_of_spades.svg", "10_of_hearts.svg"
-  const rankMap: Record<Rank, string> = {
-    A: 'ace',
-    K: 'king',
-    Q: 'queen',
-    J: 'jack',
-    '10': '10',
-    '9': '9',
-    '8': '8',
-    '7': '7',
-    '6': '6',
-    '5': '5',
-    '4': '4',
-    '3': '3',
-    '2': '2',
-  }
-  return `/assets/img/cards/${rankMap[card.rank]}_of_${card.suit}.svg`
-}
-
-function getDeckPath(): string {
-  return '/assets/img/cards/deck.svg'
+const getCardSvgPath = (card: Card) => {
+  return `/assets/img/cards/${card.rank}_of_${card.suit}.svg`
 }
 
 export default function War() {
+  const [deck, setDeck] = useState<Card[]>([])
+  const [gameState, setGameState] = useState<GameState>('init')
   const [playerDeck, setPlayerDeck] = useState<Card[]>([])
   const [botDeck, setBotDeck] = useState<Card[]>([])
-  const [pile, setPile] = useState<Card[]>([])
-  const [playerCard, setPlayerCard] = useState<Card | null>(null)
-  const [botCard, setBotCard] = useState<Card | null>(null)
-  const [message, setMessage] = useState<string>('')
-  const [gameOver, setGameOver] = useState<boolean>(false)
-  const [started, setStarted] = useState<boolean>(false)
-  const [animating, setAnimating] = useState<boolean>(false)
-  const [revealed, setRevealed] = useState<boolean>(false)
+  const [currentPlayerCard, setCurrentPlayerCard] = useState<Card[]>([])
+  const [currentBotCard, setCurrentBotCard] = useState<Card[]>([])
+  const [playerWonCards, setPlayerWonCards] = useState<Card[]>([])
+  const [botWonCards, setBotWonCards] = useState<Card[]>([])
+  const [isComparing, setIsComparing] = useState<boolean>(false)
+  const [isDrawing, setIsDrawing] = useState<boolean>(false)
+  const [message, setMessage] = useState<string>(
+    'Click "Deal" to start the game!'
+  )
+
+  const init = () => {
+    const deck = shuffle(createDeck())
+    setDeck(deck)
+    setPlayerDeck(deck.slice(0, 26))
+    setBotDeck(deck.slice(26))
+    setPlayerWonCards([])
+    setBotWonCards([])
+    setCurrentPlayerCard([])
+    setCurrentBotCard([])
+    setGameState('playing')
+    setMessage('Game started! Click on your top card to draw.')
+  }
 
   useEffect(() => {
-    // Only shuffle and set up decks when game is reset or started
-    setPlayerDeck([])
-    setBotDeck([])
-    setPile([])
-    setPlayerCard(null)
-    setBotCard(null)
-    setMessage('Click Start Playing to begin!')
-    setGameOver(false)
-    setStarted(false)
-  }, [])
+    if (gameState !== 'playing' && gameState !== 'war') return
 
-  const startGame = () => {
-    const deck = shuffle(createDeck())
-    setPlayerDeck(deck.slice(0, 26))
-    setBotDeck(deck.slice(26))
-    setPile([])
-    setPlayerCard(null)
-    setBotCard(null)
-    setMessage('Game started!')
-    setGameOver(false)
-    setStarted(true)
-  }
-
-  const playRound = () => {
-    if (gameOver || animating) return
-    if (playerDeck.length === 0 || botDeck.length === 0) {
-      setGameOver(true)
-      setMessage(playerDeck.length === 0 ? 'Bot wins!' : 'You win!')
+    // draw computer card in 'playing' and 'war' state
+    if (
+      ((gameState === 'playing' && currentBotCard.length === 0) ||
+        (gameState === 'war' && currentBotCard.length < WAR_CARDS_COUNT)) &&
+      !isComparing
+    ) {
+      console.log('Auto-drawing bot card')
+      if (botDeck.length === 0) ReshuffleBot()
+      // add random delay to simulate thinking time
+      const timeout = Math.random() * (1000 - 200) + 200
+      setTimeout(() => {
+        drawComputerCard()
+      }, timeout)
       return
     }
-    const pCard = playerDeck[0]
-    const bCard = botDeck[0]
-    setPlayerCard(pCard)
-    setBotCard(bCard)
-    setAnimating(true)
-    setRevealed(false)
-    // Animate fly-in, then flip after 1s
-    setTimeout(() => {
-      setRevealed(true)
-      // After reveal, highlight winner/loser, then update decks after 1s
-      setTimeout(() => {
-        let newPlayerDeck = playerDeck.slice(1)
-        let newBotDeck = botDeck.slice(1)
-        let newPile = [...pile, pCard, bCard]
-        const pVal = getCardValue(pCard.rank)
-        const bVal = getCardValue(bCard.rank)
-        if (pVal > bVal) {
-          setMessage('You win the round!')
-          setPlayerDeck([...newPlayerDeck, ...newPile])
-          setBotDeck(newBotDeck)
-          setPile([])
-        } else if (bVal > pVal) {
-          setMessage('Bot wins the round!')
-          setBotDeck([...newBotDeck, ...newPile])
-          setPlayerDeck(newPlayerDeck)
-          setPile([])
-        } else {
-          setMessage('War!')
-          setPlayerDeck(newPlayerDeck)
-          setBotDeck(newBotDeck)
-          setPile(newPile)
-        }
-        setAnimating(false)
-      }, 1000)
-    }, 1000)
+
+    // move to 'checking' state when both players have drawn required cards
+    if (
+      ((gameState === 'war' &&
+        currentPlayerCard.length === WAR_CARDS_COUNT &&
+        currentBotCard.length === WAR_CARDS_COUNT) ||
+        (gameState === 'playing' &&
+          currentPlayerCard.length === 1 &&
+          currentBotCard.length === 1)) &&
+      !isComparing
+    ) {
+      compareCards(currentBotCard, currentPlayerCard)
+    }
+  }, [currentPlayerCard, currentBotCard, gameState])
+
+  const drawPlayerCard = () => {
+    if (gameState !== 'playing' && gameState !== 'war') return
+    if (gameState === 'playing' && currentPlayerCard.length > 0) return
+    if (gameState === 'war' && currentPlayerCard.length >= WAR_CARDS_COUNT)
+      return
+    if (isComparing || isDrawing) return
+
+    setIsDrawing(true)
+    console.log('Player deck drawing')
+    const drawnCard = playerDeck[0]
+    const remainingDeck = playerDeck.slice(1)
+
+    setCurrentPlayerCard([...currentPlayerCard, drawnCard])
+    setPlayerDeck(remainingDeck)
+    if (playerDeck.length === 0) ReshufflePlayer()
+
+    // Release lock after animation time
+    setTimeout(() => setIsDrawing(false), 100)
   }
 
-  const resetGame = () => {
-    const deck = shuffle(createDeck())
-    setPlayerDeck(deck.slice(0, 26))
-    setBotDeck(deck.slice(26))
-    setPile([])
-    setPlayerCard(null)
-    setBotCard(null)
-    setMessage('Game restarted!')
-    setGameOver(false)
-    setStarted(true)
+  const drawComputerCard = () => {
+    if (gameState !== 'playing' && gameState !== 'war') return
+    if (gameState === 'playing' && currentBotCard.length > 0) return
+    if (gameState === 'war' && currentBotCard.length >= WAR_CARDS_COUNT) return
+    if (isComparing || isDrawing) return
+
+    console.log('Bot deck drawing')
+    const drawnCard = botDeck[0]
+    const remainingDeck = botDeck.slice(1)
+
+    setCurrentBotCard([...currentBotCard, drawnCard])
+    setBotDeck(remainingDeck)
+  }
+
+  const compareCards = (botCards: Card[], playerCards: Card[]) => {
+    if (botCards.length === 0 || playerCards.length === 0) return
+    if (isComparing) return // Prevent double comparison
+    console.log(
+      'Comparing: bot cards:',
+      ...botCards,
+      'player cards: ',
+      ...playerCards
+    )
+    setIsComparing(true)
+
+    const curBotCards = botCards[botCards.length - 1]
+    const curPlayerCards = playerCards[playerCards.length - 1]
+    let roundWinner = null
+
+    if (curPlayerCards.value > curBotCards.value) {
+      setMessage('You win this round!')
+      roundWinner = 'player'
+    } else if (curBotCards.value > curPlayerCards.value) {
+      setMessage('Computer wins this round!')
+      roundWinner = 'bot'
+    } else if (gameState === 'playing') {
+      setMessage('War! Cards are equal!')
+    } else {
+      setMessage('War continues! Cards are equal again!')
+    }
+
+    // Clear current cards after comparison
+    setTimeout(() => {
+      if (roundWinner === null) {
+        setGameState('war')
+        setIsComparing(false)
+        return
+      }
+
+      if (roundWinner === 'player')
+        setPlayerWonCards((prev) => [...prev, ...botCards, ...playerCards])
+      else if (roundWinner === 'bot')
+        setBotWonCards((prev) => [...prev, ...botCards, ...playerCards])
+      setGameState('playing')
+      setCurrentPlayerCard([])
+      setCurrentBotCard([])
+      checkGameWinner()
+    }, 1500)
+    setIsComparing(false)
+  }
+
+  const ReshuffleBot = () => {
+    if (botWonCards.length === 0) {
+      setGameState('gameOver')
+      setMessage('Computer has no more cards! You won the game!')
+      return
+    }
+    setBotDeck(shuffle(botWonCards))
+    setBotWonCards([])
+  }
+
+  const ReshufflePlayer = () => {
+    if (playerWonCards.length === 0) {
+      setGameState('gameOver')
+      setMessage('You have no more cards! You lost the game.')
+      return
+    }
+    setPlayerDeck(shuffle(playerWonCards))
+    setPlayerWonCards([])
+  }
+
+  const checkGameWinner = () => {
+    if (playerDeck.length === 0) ReshufflePlayer()
+    if (botDeck.length === 0) ReshuffleBot()
+    if (playerDeck.length === 0 && playerWonCards.length === 0) {
+      setGameState('gameOver')
+      setMessage('You have no more cards! You lost the game.')
+    }
+    if (botDeck.length === 0 && botWonCards.length === 0) {
+      setGameState('gameOver')
+      setMessage('Computer has no more cards! You won the game!')
+    }
   }
 
   return (
-    <div className='min-h-screen bg-green-900 p-4'>
-      <div className='max-w-xl mx-auto'>
-        <h1 className='text-3xl font-bold text-white text-center mb-6'>
-          War Card Game
+    <div className={`${styles.game} sm:p-4`}>
+      <motion.div
+        className={`${styles.board} ${
+          gameState === 'war' ? 'bg-red-900' : 'bg-green-900'
+        }`}
+        initial={{ x: -100, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+      >
+        <h1 className='text-2xl sm:text-3xl font-bold text-white text-center p-4 sm:p-8'>
+          War
         </h1>
-        {/* Bot Deck (top) */}
-        <div className='flex justify-center items-center mb-2'>
-          <div className='flex items-center'>
-            <div
-              className={`bg-gray-700 rounded-lg min-w-[${CARD_WIDTH_PX}]] min-h-[${CARD_HEIGHT_PX}] flex items-center justify-center text-white shadow-lg m-4`}
-            >
-              <Image
-                src={getDeckPath()}
-                alt='Bot Deck'
-                width={CARD_WIDTH}
-                height={CARD_HEIGHT}
-                priority
-              />
+        <div className='w-[60%] mx-auto my-2 sm:my-8 flex flex-col items-center justify-center gap-20'>
+          <div className='grid grid-cols-3 gap-12 justify-items-center items-center'>
+            <div></div>
+            <div className={styles.deckSlot}>
+              {/* Bot deck slot */}
+              {botDeck.length > 0 && (
+                <div className={styles.card}>
+                  <Image
+                    src={cardBackImgUri}
+                    alt='Bot deck'
+                    sizes='100vw'
+                    fill
+                  />
+                  <div className='absolute inset-0 flex items-center justify-center'>
+                    <span className='text-white text-xs font-bold bg-black bg-opacity-50 px-2 py-1 rounded'>
+                      {botDeck.length} cards
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
-            <div className='flex flex-col text-left ml-8'>
-              <p className='text-white text-3xl'>Bot</p>
-              <span className=' text-gray-300 mt-2'>
-                {botDeck.length} cards
-              </span>
+            <div className='flex items-center justify-center'>
+              <span>BOT won {botWonCards.length} cards</span>
             </div>
           </div>
-        </div>
-        {/* Center board: animated cards */}
-        <div
-          className='flex justify-center items-center gap-16 mb-6 relative'
-          style={{ height: '120px' }}
-        >
-          {/* Bot card fly-in */}
-          <div
-            style={{
-              position: 'relative',
-              width: CARD_WIDTH_PX,
-              height: CARD_HEIGHT_PX,
-            }}
-          >
-            {/* Flip animation during animating */}
-            {botCard && animating && (
-              <div
-                className={styles.cardFlyIn}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%',
-                }}
-              >
-                <div
-                  className={`${styles.cardFlip}${revealed ? ` ${styles.flipped}` : ''}`}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    position: 'relative',
-                  }}
-                >
-                  {/* Card back: JPG image */}
-                  <div className={`${styles.cardFace} ${styles.cardBack}`}>
-                    <Image
-                      src='/assets/img/cards/card_back.jpg'
-                      alt='Card Back'
-                      width={CARD_WIDTH}
-                      height={CARD_HEIGHT}
-                      priority
-                    />
-                  </div>
-                  {/* Card front: SVG */}
-                  <div
-                    className={`${styles.cardFace} ${styles.cardFront}`}
-                    style={{
-                      borderRadius: '0.5rem',
-                      background: 'white',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
+          <div className='flex flex-row justify-center w-1/2'>
+            <div className={styles.slotsContainer}>
+              <div className={styles.cardSlot}>
+                {currentBotCard.length > 0 ? (
+                  <motion.div
+                    className={styles.card}
+                    initial={{ x: 50, y: -150 }}
+                    animate={{ x: 0, y: 0 }}
+                    transition={{ duration: 0.5 }}
                   >
                     <Image
-                      src={getCardSvgPath(botCard)}
-                      alt={`${botCard.rank} of ${botCard.suit}`}
-                      width={CARD_WIDTH}
-                      height={CARD_HEIGHT}
-                      priority
+                      src={getCardSvgPath(
+                        currentBotCard[currentBotCard.length - 1]
+                      )}
+                      alt={`${
+                        currentBotCard[currentBotCard.length - 1].rank
+                      } of ${currentBotCard[currentBotCard.length - 1].suit}`}
+                      sizes='100vw'
+                      fill
                     />
+                  </motion.div>
+                ) : (
+                  <div className={styles.emptyCardSlot}>
+                    <span className={styles.emptySlotText}>Bot Card</span>
                   </div>
-                </div>
+                )}
               </div>
-            )}
-            {/* Winner/loser highlight only after animation */}
-            {botCard && revealed && !animating && (
-              <div
-                className={`${styles.cardFlip} ${styles.flipped} ${
-                  getCardValue(botCard.rank) > getCardValue(playerCard!.rank)
-                    ? styles.cardWinGlow
-                    : ''
-                }`}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                }}
-              >
-                <div className={`${styles.cardFace} ${styles.cardBack}`}>
-                  <Image
-                    src='/assets/img/cards/card_back.jpg'
-                    alt='Card Back'
-                    width={CARD_WIDTH}
-                    height={CARD_HEIGHT}
-                    priority
-                  />
-                </div>
-                <div
-                  className={`${styles.cardFace} ${styles.cardFront}`}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    borderRadius: '0.5rem',
-                    background: 'white',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Image
-                    src={getCardSvgPath(botCard)}
-                    alt={`${botCard.rank} of ${botCard.suit}`}
-                    width={CARD_WIDTH}
-                    height={CARD_HEIGHT}
-                    priority
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-          {/* Player card fly-in */}
-          <div
-            style={{
-              position: 'relative',
-              width: CARD_WIDTH_PX,
-              height: CARD_HEIGHT_PX,
-            }}
-          >
-            {/* Flip animation during animating */}
-            {playerCard && animating && (
-              <div
-                className={styles.cardFlyInPlayer}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%',
-                }}
-              >
-                <div
-                  className={`${styles.cardFlip}${revealed ? ` ${styles.flipped}` : ''}`}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    position: 'relative',
-                  }}
-                >
-                  <div className={`${styles.cardFace} ${styles.cardBack}`}>
-                    <Image
-                      src='/assets/img/cards/card_back.jpg'
-                      alt='Card Back'
-                      width={CARD_WIDTH}
-                      height={CARD_HEIGHT}
-                      priority
-                    />
-                  </div>
-                  <div
-                    className={`${styles.cardFace} ${styles.cardFront}`}
-                    style={{
-                      transform: 'rotateY(180deg)',
-                      width: '100%',
-                      height: '100%',
-                      borderRadius: '0.5rem',
-                      background: 'white',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
+              <div className={styles.cardSlot}>
+                {currentPlayerCard.length > 0 ? (
+                  <motion.div
+                    className={styles.card}
+                    initial={{ x: -50, y: 150 }}
+                    animate={{ x: 0, y: 0 }}
+                    transition={{ duration: 0.5 }}
                   >
                     <Image
-                      src={getCardSvgPath(playerCard)}
-                      alt={`${playerCard.rank} of ${playerCard.suit}`}
-                      width={CARD_WIDTH}
-                      height={CARD_HEIGHT}
-                      priority
+                      src={getCardSvgPath(
+                        currentPlayerCard[currentPlayerCard.length - 1]
+                      )}
+                      alt={`${
+                        currentPlayerCard[currentPlayerCard.length - 1].rank
+                      } of ${
+                        currentPlayerCard[currentPlayerCard.length - 1].suit
+                      }`}
+                      sizes='100vw'
+                      fill
                     />
+                  </motion.div>
+                ) : (
+                  <div className={styles.emptyCardSlot}>
+                    <span className={styles.emptySlotText}>Player Card</span>
                   </div>
-                </div>
+                )}
               </div>
-            )}
-            {/* Winner/loser highlight only after animation */}
-            {playerCard && revealed && !animating && (
-              <div
-                className={`${styles.cardFlip} ${styles.flipped} ${
-                  getCardValue(playerCard.rank) > getCardValue(botCard!.rank)
-                    ? styles.cardWinGlow
-                    : ''
-                }`}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                }}
-              >
-                <div className={`${styles.cardFace} ${styles.cardBack}`}>
-                  <Image
-                    src='/assets/img/cards/card_back.jpg'
-                    alt='Card Back'
-                    width={CARD_WIDTH}
-                    height={CARD_HEIGHT}
-                    priority
-                  />
-                </div>
-                <div
-                  className={`${styles.cardFace} ${styles.cardFront}`}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    borderRadius: '0.5rem',
-                    background: 'white',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
+            </div>
+          </div>
+          <div className='grid grid-cols-3 gap-12 justify-items-center'>
+            <div className='flex items-center justify-center'>
+              <span>PLAYER won {playerWonCards.length} cards</span>
+            </div>
+            <div className={styles.deckSlot}>
+              {/* Player deck slot */}
+              {playerDeck.length > 0 && (
+                <motion.div
+                  className={styles.card}
+                  onClick={drawPlayerCard}
+                  aria-disabled={
+                    isComparing ||
+                    isDrawing ||
+                    ((gameState !== 'playing' ||
+                      currentPlayerCard.length > 0) &&
+                      (gameState !== 'war' ||
+                        currentPlayerCard.length >= WAR_CARDS_COUNT))
+                  }
+                  style={{}}
+                  whileTap={{ scale: 0.95 }}
                 >
                   <Image
-                    src={getCardSvgPath(playerCard)}
-                    alt={`${playerCard.rank} of ${playerCard.suit}`}
-                    width={CARD_WIDTH}
-                    height={CARD_HEIGHT}
-                    priority
+                    src={cardBackImgUri}
+                    alt='Click to draw card'
+                    sizes='100vw'
+                    fill
+                    className='object-contain'
                   />
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-        {/* Player Deck (bottom) */}
-        <div className='flex justify-center items-center mt-2 mb-6'>
-          <div className='flex items-center'>
-            <div className='flex flex-col mr-8'>
-              <p className='text-3xl text-white'>You</p>
-              <span className='text-gray-300 mt-2'>
-                {playerDeck.length} cards
-              </span>
-            </div>
-            <div
-              className={`bg-gray-700 rounded-lg min-w-[${CARD_WIDTH_PX}]] min-h-[${CARD_HEIGHT_PX}] flex items-center justify-center text-white shadow-lg m-4`}
-            >
-              <Image
-                src={getDeckPath()}
-                alt='Your Deck'
-                width={CARD_WIDTH}
-                height={CARD_HEIGHT}
-                priority
-              />
+                  <div className='absolute inset-0 flex items-center justify-center'>
+                    <span className='text-white text-xs font-bold bg-black bg-opacity-50 px-2 py-1 rounded'>
+                      {playerDeck.length} cards
+                    </span>
+                  </div>
+                </motion.div>
+              )}
             </div>
           </div>
-        </div>
-        {/* Message section */}
-        <div className='text-center m-12'>
-          <span className='text-lg text-yellow-200 font-semibold'>{message}</span>
+          <div></div>
         </div>
         <div className='text-center mb-4'>
-          {!started ? (
-            <button
-              onClick={startGame}
-              className='bg-lime-500 hover:bg-lime-600 text-white px-8 py-3 rounded-lg font-semibold text-lg'
+          {gameState === 'init' && (
+            <motion.button
+              className='px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors'
+              onClick={init}
+              whileTap={{ scale: 0.95 }}
             >
-              Start Playing
-            </button>
-          ) : (
-            <>
-              <button
-                onClick={playRound}
-                disabled={gameOver || animating}
-                className='bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold text-lg'
-              >
-                Play Round
-              </button>
-              <button
-                onClick={resetGame}
-                disabled={animating}
-                className='bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-lg font-semibold text-lg ml-4'
-              >
-                Reset Game
-              </button>
-            </>
+              Deal Cards
+            </motion.button>
           )}
+          {gameState === 'gameOver' && (
+            <motion.button
+              className='px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors'
+              onClick={init}
+              whileTap={{ scale: 0.95 }}
+            >
+              New Game
+            </motion.button>
+          )}
+          <p className='text-white mt-2'>{message}</p>
         </div>
-        {/* Game rules section */}
-        <div className='max-w-xl mx-auto bg-gray-800 rounded-lg p-4 m-32 text-white text-left shadow-lg'>
-          <h2 className='text-xl font-bold mb-2'>How to Play</h2>
-          <ul className='list-disc pl-6 space-y-1'>
-            <li>Each player starts with half the deck (26 cards).</li>
-            <li>Click "Play Round" to flip the top card of each deck.</li>
-            <li>
-              The higher card wins both cards and adds them to the bottom of their
-              deck.
-            </li>
-            <li>
-              If both cards are equal, it's "War": the cards go to a pile and the
-              next round decides who wins the pile.
-            </li>
-            <li>
-              The game ends when one player has all the cards.
-            </li>
-          </ul>
+      </motion.div>
+      <motion.div
+        className={styles.howToPlay}
+        initial={{ y: 100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+      >
+        <h2 className='text-xl sm:text-2xl font-bold mb-4 text-left text-gray-800'>
+          War Game Rules
+        </h2>
+        <div className='text-sm sm:text-base space-y-4 leading-relaxed'>
+          <div className='bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500'>
+            <p className='mb-2'>
+              <strong>🎯 Overview:</strong> War is a simple yet exciting card
+              game of pure chance. Each player gets half the deck (26 cards),
+              and you battle by comparing the top cards. Higher card wins both
+              cards. When cards tie, it's WAR!
+            </p>
+          </div>
+
+          <div className='grid md:grid-cols-2 gap-4'>
+            <div className='bg-green-50 p-4 rounded-lg'>
+              <h3 className='font-bold text-green-800 mb-2'>🎮 How to Play</h3>
+              <ul className='space-y-1 text-green-700 text-sm'>
+                <li>• Each player starts with 26 cards face down</li>
+                <li>• Click "Play Round" to reveal top cards</li>
+                <li>• Higher card wins both cards</li>
+                <li>• Won cards go to your won pile</li>
+                <li>• When your deck runs out, won cards are shuffled back</li>
+              </ul>
+            </div>
+
+            <div className='bg-orange-50 p-4 rounded-lg'>
+              <h3 className='font-bold text-orange-800 mb-2'>⚔️ War Rules</h3>
+              <ul className='space-y-1 text-orange-700 text-sm'>
+                <li>• When cards tie in value → WAR!</li>
+                <li>• Each player puts 3 cards face down</li>
+                <li>• Then 1 card face up to determine winner</li>
+                <li>• Winner takes all 10 cards on the table</li>
+                <li>• If face up cards tie again → another WAR!</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className='bg-red-50 p-4 rounded-lg border-l-4 border-red-500'>
+            <h3 className='font-bold text-red-800 mb-2'>🏆 Winning & Losing</h3>
+            <div className='text-red-700 space-y-2 text-sm'>
+              <p>
+                <strong>You win when:</strong> Computer runs out of all cards
+              </p>
+              <p>
+                <strong>You lose when:</strong> You run out of all cards OR
+                don't have enough cards to complete a war
+              </p>
+              <p>
+                <strong>Card Values:</strong> 2 (lowest) → 3 → 4 → ... → Jack →
+                Queen → King → Ace (highest)
+              </p>
+            </div>
+          </div>
+
+          <div className='text-center'>
+            <p className='text-gray-600 italic text-sm'>
+              War is a game of pure luck - no strategy needed! Just keep playing
+              rounds and see who ends up with all 52 cards.
+            </p>
+          </div>
         </div>
-      </div>
+        <p className='mt-4 text-sm text-gray-300'>
+          <strong>Tip:</strong> War is a game of luck and suspense—enjoy the
+          dramatic battles and see if you can claim all 52 cards!
+        </p>
+      </motion.div>
     </div>
   )
 }

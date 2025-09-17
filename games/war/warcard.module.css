@@ -1,13 +1,192 @@
-/* warcard.css: Animations for War game cards */
-
-.cardFlyIn {
-  animation: fly-in 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+/* War Game Styles */
+.game {
+  --card-width: 64px;
+  --card-height: 93px;
 }
 
-@keyframes fly-in {
+@media (min-width: 640px) {
+  .game {
+    --card-width: 96px;
+    --card-height: 139px;
+  }
+}
+
+.board {
+  @apply w-full flex flex-col sm:max-w-4xl mx-auto rounded-none sm:rounded-3xl shadow-lg p-2 sm:p-4 relative
+}
+
+.howToPlay {
+  @apply w-full sm:max-w-4xl mx-auto mb-6 sm:my-10 bg-white/80 sm:rounded-lg p-4 sm:p-6 shadow-lg text-gray-900;
+}
+
+.gameTitle {
+  @apply text-2xl sm:text-3xl font-bold text-white text-center p-4;
+}
+
+.slotsContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2rem;
+  margin: 1rem 0;
+}
+
+.deckSlot {
+  position: relative;
+  width: var(--card-width);
+  height: var(--card-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cardSlot {
+  position: relative;
+  width: var(--card-width);
+  height: var(--card-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cardSlot::before {
+  content: '';
+  position: absolute;
+  width: var(--card-width);
+  height: var(--card-height);
+  border: 2px dashed #9ca3af;
+  border-radius: 8px;
+  background: rgba(156, 163, 175, 0.1);
+  z-index: 0;
+}
+
+.emptyCardSlot {
+  width: var(--card-width);
+  height: var(--card-height);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.emptySlotText {
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-align: center;
+  font-weight: 500;
+}
+
+.card {
+  position: relative;
+  width: var(--card-width);
+  height: var(--card-height);
+  border-radius: 8px;
+  border: none;
+  perspective: 1000px;
+  object-fit: cover;
+  z-index: 10;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  transition: box-shadow 0.3s ease;
+  cursor: pointer;
+  user-select: none;}
+
+.card:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+}
+
+.cardStack {
+  width: var(--card-width);
+  height: var(--card-height);
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.cardStack:hover {
+  transform: translateY(-2px);
+}
+
+.emptyStack {
+  width: var(--card-width);
+  height: var(--card-height);
+  border: 2px dashed #ffffff40;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Animation effects */
+.cardSlideIn {
+  animation: slideIn 0.6s ease-out;
+}
+
+.cardSlideOut {
+  animation: slideOut 0.4s ease-in;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) rotateY(180deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotateY(0deg);
+  }
+}
+
+@keyframes slideOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(20px) scale(0.8);
+  }
+}
+
+/* War effect styles */
+.warIndicator {
+  @apply text-red-400 text-xl font-bold animate-pulse;
+}
+
+/* Winner announcement styles */
+.winnerBanner {
+  @apply bg-gradient-to-r from-yellow-400 via-red-500 to-pink-500 text-white p-4 rounded-lg text-center font-bold text-xl;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .board {
+    @apply p-2;
+  }
+  
+  .game {
+    --card-width: 64px;
+    --card-height: 93px;
+  }
+  
+  .gameTitle {
+    @apply text-xl p-2;
+  }
+}
+
+/* Legacy animations from original file */
+@keyframes fly-in-legacy {
   0% {
     transform: translateY(-120px) scale(0.7) rotate(-10deg);
     opacity: 0.2;
+  }
+  80% {
+    transform: translateY(10px) scale(1.05) rotate(-2deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0) scale(1) rotate(0deg);
+    opacity: 1;
   }
 
   80% {
@@ -64,7 +243,7 @@
 }
 
 .cardBack {
-  /* Card back - front face showing back image */
+  background: linear-gradient(135deg, #1e40af, #3b82f6);
 }
 
 .cardFront {
