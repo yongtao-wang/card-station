@@ -27,6 +27,11 @@ export async function generateMetadata(
   const getOgImage = (gameSlug: string) => {
     const ogImages: Record<string, string> = {
       'holdem': '/assets/img/og/holdem_og.webp',
+      'blackjack': '/assets/img/og/blackjack_og.webp',
+      'flipcard': '/assets/img/og/flipcard_og.webp',
+      'war': '/assets/img/og/war_og.webp',
+      'highlow': '/assets/img/og/highlow_og.webp',
+      'snap': '/assets/img/og/snap_og.webp',
       // Add more mappings as more games are added
     }
     return ogImages[gameSlug] || '/assets/img/og/holdem_og.webp' // default to holdem image
