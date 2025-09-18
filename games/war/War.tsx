@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { Ref, RefObject, useCallback, useEffect, useRef, useState } from 'react'
+import { a, i } from 'motion/react-client'
 
 import Image from 'next/image'
 import { motion } from 'motion/react'
@@ -27,353 +28,675 @@ type Suit = (typeof SUITS)[number]
 type Rank = (typeof RANKS)[number]
 
 interface Card {
+  id: string
   suit: Suit
   rank: Rank
   value: number
+  x?: number
+  y?: number
+  z?: number
+  isFaceUp?: boolean
+  tilt?: number
 }
 
 type GameState = 'init' | 'playing' | 'war' | 'checking' | 'gameOver'
-const WAR_CARDS_COUNT = 5 // 1 original + 3 face down + 1 face up
-
-const createDeck = (): Card[] => {
-  const deck: Card[] = []
-  SUITS.forEach((suit) => {
-    RANKS.forEach((rank, index) => {
-      deck.push({ suit, rank, value: index + 2 }) // value from 2 to 14 (ace)
-    })
-  })
-  return shuffle(deck)
-}
-
-const shuffle = (array: Card[]): Card[] => {
-  const shuffled = [...array]
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
-  }
-  return shuffled
-}
 
 const cardBackImgUri = '/assets/img/cards/card_back.jpg'
 
 const getCardSvgPath = (card: Card) => {
   return `/assets/img/cards/${card.rank}_of_${card.suit}.svg`
 }
+// Card deck creation and shuffling
+const createDeck = (): Record<string, Card> => {
+  const deck: Record<string, Card> = {}
+  SUITS.forEach((suit) => {
+    RANKS.forEach((rank, index) => {
+      const card: Card = {
+        id: `${suit[0]}_${rank}`,
+        suit,
+        rank,
+        value: index + 2, // value from 2 to 14 (ace)
+        x: 0,
+        y: 0,
+        z: index,
+        tilt: 0,
+        isFaceUp: false,
+      }
+      deck[card.id] = card
+    })
+  })
+  return deck
+}
+
+// Shuffle card ID array
+const shuffle = (array: string[]) => {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[array[i], array[j]] = [array[j], array[i]]
+  }
+  return array
+}
+
+// Get position anchor relative to board
+interface Anchor {
+  x: number
+  y: number
+}
+
+const getAnchor = (
+  ref: RefObject<HTMLElement>,
+  boardRef: RefObject<HTMLElement>
+) => {
+  if (!ref.current || !boardRef.current) return null
+
+  const refRect = ref.current.getBoundingClientRect()
+  const boardRect = boardRef.current.getBoundingClientRect()
+
+  return {
+    x: refRect.left - boardRect.left + refRect.width / 2,
+    y: refRect.top - boardRect.top + refRect.height / 2,
+  }
+}
+
+const useAnchors = (
+  boardRef: RefObject<HTMLElement>,
+  refs: Record<string, RefObject<HTMLElement>>
+) => {
+  const [anchors, setAnchors] = useState<Record<string, Anchor | null>>({})
+
+  const updateAnchors = useCallback(() => {
+    const newAnchors: Record<string, Anchor | null> = {}
+    for (const key in refs) {
+      newAnchors[key] = getAnchor(refs[key], boardRef)
+    }
+    setAnchors(newAnchors)
+  }, [boardRef])
+
+  useEffect(() => {
+    updateAnchors()
+  }, [updateAnchors])
+
+  useEffect(() => {
+    const handleResize = () => {
+      // Delay to allow DOM to update after resize
+      setTimeout(updateAnchors, 100)
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [updateAnchors])
+
+  return anchors
+}
 
 export default function War() {
-  const [deck, setDeck] = useState<Card[]>([])
   const [gameState, setGameState] = useState<GameState>('init')
-  const [playerDeck, setPlayerDeck] = useState<Card[]>([])
-  const [botDeck, setBotDeck] = useState<Card[]>([])
-  const [currentPlayerCard, setCurrentPlayerCard] = useState<Card[]>([])
-  const [currentBotCard, setCurrentBotCard] = useState<Card[]>([])
-  const [playerWonCards, setPlayerWonCards] = useState<Card[]>([])
-  const [botWonCards, setBotWonCards] = useState<Card[]>([])
-  const [isComparing, setIsComparing] = useState<boolean>(false)
-  const [isDrawing, setIsDrawing] = useState<boolean>(false)
+  const [deck, setDeck] = useState<Record<string, Card>>({})
   const [message, setMessage] = useState<string>(
     'Click "Deal" to start the game!'
   )
 
+  const [playerHandCards, setPlayerHandCards] = useState<string[]>([])
+  const [botHandCards, setBotHandCards] = useState<string[]>([])
+  const [playerDrawnCards, setPlayerDrawnCards] = useState<string[]>([])
+  const [botDrawnCards, setBotDrawnCards] = useState<string[]>([])
+  const [playerPoolCards, setPlayerPoolCards] = useState<string[]>([])
+  const [botPoolCards, setBotPoolCards] = useState<string[]>([])
+
+  const handleRoundEndLockRef = useRef<boolean>(false)
+  const drawnCardTargetRef = useRef<number>(1)
+
+  const boardRef = useRef<HTMLDivElement>(null)
+  const botDeckPosRef = useRef<HTMLDivElement>(null)
+  const playerDeckPosRef = useRef<HTMLDivElement>(null)
+  const botDrawnCardPosRef = useRef<HTMLDivElement>(null)
+  const playerDrawnCardPosRef = useRef<HTMLDivElement>(null)
+  const botCardPoolPosRef = useRef<HTMLDivElement>(null)
+  const playerCardPoolPosRef = useRef<HTMLDivElement>(null)
+
+  const anchors = useAnchors(boardRef, {
+    botDeckAnchor: botDeckPosRef,
+    playerDeckAnchor: playerDeckPosRef,
+    botCurrentCardAnchor: botDrawnCardPosRef,
+    playerCurrentCardAnchor: playerDrawnCardPosRef,
+    botPoolCardsAnchor: botCardPoolPosRef,
+    playerPoolCardsAnchor: playerCardPoolPosRef,
+  })
+
+  const isRefsReady = (refs: RefObject<HTMLElement>[]) => {
+    return refs.every((ref) => ref.current !== null)
+  }
+
+  const refsReady = isRefsReady([
+    boardRef,
+    botDeckPosRef,
+    playerDeckPosRef,
+    botDrawnCardPosRef,
+    playerDrawnCardPosRef,
+    botCardPoolPosRef,
+    playerCardPoolPosRef,
+  ])
+
+  // Update all card positions when anchors change (e.g., window resize)
+  const updateAllCardPositions = useCallback(() => {
+    if (!refsReady) return
+
+    setDeck((prevDeck) => {
+      const updatedDeck = { ...prevDeck }
+
+      // Update player hand cards positions
+      playerHandCards.forEach((cardId, index) => {
+        if (anchors.playerDeckAnchor) {
+          updatedDeck[cardId] = {
+            ...updatedDeck[cardId],
+            x: anchors.playerDeckAnchor.x - Math.floor(index / 5),
+            y: anchors.playerDeckAnchor.y - Math.floor(index / 5),
+            z: index + 10,
+          }
+        }
+      })
+
+      // Update bot hand cards positions
+      botHandCards.forEach((cardId, index) => {
+        if (anchors.botDeckAnchor) {
+          updatedDeck[cardId] = {
+            ...updatedDeck[cardId],
+            x: anchors.botDeckAnchor.x - Math.floor(index / 5),
+            y: anchors.botDeckAnchor.y - Math.floor(index / 5),
+            z: index + 10,
+          }
+        }
+      })
+
+      // Update drawn cards positions
+      playerDrawnCards.forEach((cardId, index) => {
+        if (anchors.playerCurrentCardAnchor) {
+          updatedDeck[cardId] = {
+            ...updatedDeck[cardId],
+            x: anchors.playerCurrentCardAnchor.x,
+            y: anchors.playerCurrentCardAnchor.y,
+            z: index + 999,
+          }
+        }
+      })
+
+      botDrawnCards.forEach((cardId, index) => {
+        if (anchors.botCurrentCardAnchor) {
+          updatedDeck[cardId] = {
+            ...updatedDeck[cardId],
+            x: anchors.botCurrentCardAnchor.x,
+            y: anchors.botCurrentCardAnchor.y,
+            z: index + 999,
+          }
+        }
+      })
+
+      // Update pool cards positions
+      playerPoolCards.forEach((cardId, index) => {
+        if (anchors.playerPoolCardsAnchor) {
+          updatedDeck[cardId] = {
+            ...updatedDeck[cardId],
+            x: anchors.playerPoolCardsAnchor.x,
+            y: anchors.playerPoolCardsAnchor.y,
+            z: index + 1,
+          }
+        }
+      })
+
+      botPoolCards.forEach((cardId, index) => {
+        if (anchors.botPoolCardsAnchor) {
+          updatedDeck[cardId] = {
+            ...updatedDeck[cardId],
+            x: anchors.botPoolCardsAnchor.x,
+            y: anchors.botPoolCardsAnchor.y,
+            z: index + 1,
+          }
+        }
+      })
+
+      return updatedDeck
+    })
+  }, [
+    anchors,
+    refsReady,
+    playerHandCards,
+    botHandCards,
+    playerDrawnCards,
+    botDrawnCards,
+    playerPoolCards,
+    botPoolCards,
+  ])
+
+  // Trigger card position update when anchors change
+  useEffect(() => {
+    updateAllCardPositions()
+  }, [anchors, updateAllCardPositions])
+
   const init = () => {
-    const deck = shuffle(createDeck())
-    setDeck(deck)
-    setPlayerDeck(deck.slice(0, 26))
-    setBotDeck(deck.slice(26))
-    setPlayerWonCards([])
-    setBotWonCards([])
-    setCurrentPlayerCard([])
-    setCurrentBotCard([])
+    setDeck(initDeckPositions(createDeck()))
+    setPlayerDrawnCards([])
+    setBotDrawnCards([])
+    setPlayerPoolCards([])
+    setBotPoolCards([])
+    handleRoundEndLockRef.current = false
+    drawnCardTargetRef.current = 1
     setGameState('playing')
     setMessage('Game started! Click on your top card to draw.')
+  }
+
+  const initDeckPositions = (deck: Record<string, Card>) => {
+    const shuffledIds = shuffle(Object.keys(deck))
+    const playerBaseX = anchors.playerDeckAnchor?.x || 100
+    const playerBaseY = anchors.playerDeckAnchor?.y || 100
+    const botBaseX = anchors.botDeckAnchor?.x || 100
+    const botBaseY = anchors.botDeckAnchor?.y || 100
+
+    shuffledIds.forEach((cardId, index) => {
+      const card = deck[cardId]
+      card.isFaceUp = false
+      // Simulate interleaving dealing of cards
+      if (index % 2 === 0) {
+        card.x = playerBaseX - Math.floor(index / 5)
+        card.y = playerBaseY - Math.floor(index / 5)
+        card.z = (index + 1) * 10
+        setPlayerHandCards((prev) => [...prev, card.id])
+      } else {
+        card.x = botBaseX - Math.floor(index / 5)
+        card.y = botBaseY - Math.floor(index / 5)
+        card.z = (index + 1) * 10
+        setBotHandCards((prev) => [...prev, card.id])
+      }
+    })
+    return deck
   }
 
   useEffect(() => {
     if (gameState !== 'playing' && gameState !== 'war') return
 
+    if (playerHandCards.length === 0)
+      setTimeout(() => {
+        resetPoolCardsToDeck(anchors.playerDeckAnchor)
+      }, 300)
+    if (botHandCards.length === 0)
+      setTimeout(() => {
+        resetPoolCardsToDeck(anchors.botDeckAnchor)
+      }, 300)
+
     // draw computer card in 'playing' and 'war' state
     if (
-      ((gameState === 'playing' && currentBotCard.length === 0) ||
-        (gameState === 'war' && currentBotCard.length < WAR_CARDS_COUNT)) &&
-      !isComparing
+      ((gameState === 'playing' && botDrawnCards.length < 1) ||
+        (gameState === 'war' &&
+          botDrawnCards.length < drawnCardTargetRef.current)) &&
+      !handleRoundEndLockRef.current
     ) {
-      console.log('Auto-drawing bot card')
-      if (botDeck.length === 0) ReshuffleBot()
       // add random delay to simulate thinking time
       const timeout = Math.random() * (1000 - 200) + 200
       setTimeout(() => {
-        drawComputerCard()
+        let cardFaceUp = true
+        if (
+          gameState === 'war' &&
+          botDrawnCards.length < drawnCardTargetRef.current - 1
+        )
+          cardFaceUp = false
+        moveCard(botHandCards.at(-1)!, anchors.botCurrentCardAnchor, cardFaceUp)
       }, timeout)
       return
     }
 
-    // move to 'checking' state when both players have drawn required cards
     if (
       ((gameState === 'war' &&
-        currentPlayerCard.length === WAR_CARDS_COUNT &&
-        currentBotCard.length === WAR_CARDS_COUNT) ||
+        playerDrawnCards.length >= drawnCardTargetRef.current &&
+        botDrawnCards.length >= drawnCardTargetRef.current) ||
         (gameState === 'playing' &&
-          currentPlayerCard.length === 1 &&
-          currentBotCard.length === 1)) &&
-      !isComparing
+          playerDrawnCards.length === 1 &&
+          botDrawnCards.length === 1)) &&
+      !handleRoundEndLockRef.current
     ) {
-      compareCards(currentBotCard, currentPlayerCard)
+      HandleRoundEnd()
     }
-  }, [currentPlayerCard, currentBotCard, gameState])
+  }, [playerHandCards, botHandCards, gameState])
 
-  const drawPlayerCard = () => {
-    if (gameState !== 'playing' && gameState !== 'war') return
-    if (gameState === 'playing' && currentPlayerCard.length > 0) return
-    if (gameState === 'war' && currentPlayerCard.length >= WAR_CARDS_COUNT)
-      return
-    if (isComparing || isDrawing) return
+  const allowToDraw = (
+    gameState: GameState,
+    drawnCount: number,
+    drawnCardTarget: number
+  ): boolean => {
+    // Only allow drawing in 'playing' or 'war' state
+    if (gameState !== 'playing' && gameState !== 'war') return false
 
-    setIsDrawing(true)
-    console.log('Player deck drawing')
-    const drawnCard = playerDeck[0]
-    const remainingDeck = playerDeck.slice(1)
+    // Normal round: can only draw 1 card
+    if (gameState === 'playing' && drawnCount >= 1) return false
 
-    setCurrentPlayerCard([...currentPlayerCard, drawnCard])
-    setPlayerDeck(remainingDeck)
-    if (playerDeck.length === 0) ReshufflePlayer()
+    // War round: can only draw up to the target amount
+    if (gameState === 'war' && drawnCount >= drawnCardTarget) return false
 
-    // Release lock after animation time
-    setTimeout(() => setIsDrawing(false), 100)
+    return true
   }
 
-  const drawComputerCard = () => {
-    if (gameState !== 'playing' && gameState !== 'war') return
-    if (gameState === 'playing' && currentBotCard.length > 0) return
-    if (gameState === 'war' && currentBotCard.length >= WAR_CARDS_COUNT) return
-    if (isComparing || isDrawing) return
+  const HandleRoundEnd = () => {
+    if (playerDrawnCards.length === 0 || botDrawnCards.length === 0) return
+    if (handleRoundEndLockRef.current) return // Prevent double comparison
+    handleRoundEndLockRef.current = true
+    // Compare cards
+    const curBotCard = deck[botDrawnCards.at(-1)!]
+    const curPlayerCard = deck[playerDrawnCards.at(-1)!]
+    let roundWinner: 'player' | 'bot' | null = null
 
-    console.log('Bot deck drawing')
-    const drawnCard = botDeck[0]
-    const remainingDeck = botDeck.slice(1)
-
-    setCurrentBotCard([...currentBotCard, drawnCard])
-    setBotDeck(remainingDeck)
-  }
-
-  const compareCards = (botCards: Card[], playerCards: Card[]) => {
-    if (botCards.length === 0 || playerCards.length === 0) return
-    if (isComparing) return // Prevent double comparison
-    console.log(
-      'Comparing: bot cards:',
-      ...botCards,
-      'player cards: ',
-      ...playerCards
-    )
-    setIsComparing(true)
-
-    const curBotCards = botCards[botCards.length - 1]
-    const curPlayerCards = playerCards[playerCards.length - 1]
-    let roundWinner = null
-
-    if (curPlayerCards.value > curBotCards.value) {
+    if (curPlayerCard.value > curBotCard.value) {
       setMessage('You win this round!')
       roundWinner = 'player'
-    } else if (curBotCards.value > curPlayerCards.value) {
+    } else if (curBotCard.value > curPlayerCard.value) {
       setMessage('Computer wins this round!')
       roundWinner = 'bot'
-    } else if (gameState === 'playing') {
-      setMessage('War! Cards are equal!')
     } else {
-      setMessage('War continues! Cards are equal again!')
+      if (gameState === 'playing') {
+        setMessage('War! Cards are equal!')
+      } else {
+        setMessage('War continues! Cards are equal again!')
+      }
     }
 
     // Clear current cards after comparison
     setTimeout(() => {
       if (roundWinner === null) {
         setGameState('war')
-        setIsComparing(false)
+        drawnCardTargetRef.current += 4
+        handleRoundEndLockRef.current = false
         return
       }
 
       if (roundWinner === 'player')
-        setPlayerWonCards((prev) => [...prev, ...botCards, ...playerCards])
-      else if (roundWinner === 'bot')
-        setBotWonCards((prev) => [...prev, ...botCards, ...playerCards])
+        moveAllDrawnCardsToPool(anchors.playerPoolCardsAnchor)
+      if (roundWinner === 'bot')
+        moveAllDrawnCardsToPool(anchors.botPoolCardsAnchor)
       setGameState('playing')
-      setCurrentPlayerCard([])
-      setCurrentBotCard([])
       checkGameWinner()
     }, 1500)
-    setIsComparing(false)
+
+    setTimeout(() => {
+      handleRoundEndLockRef.current = false
+    }, 600)
   }
 
-  const ReshuffleBot = () => {
-    if (botWonCards.length === 0) {
-      setGameState('gameOver')
-      setMessage('Computer has no more cards! You won the game!')
-      return
+  const moveCard = (
+    cardId: string,
+    destAnchor: Anchor | null,
+    isFaceUp: boolean | null
+  ) => {
+    // Concurrency should be handled outside of this function
+    if (!destAnchor) return
+
+    if (destAnchor === anchors.botCurrentCardAnchor) {
+      setDeck((prevDeck) => {
+        return {
+          ...prevDeck,
+          [cardId]: {
+            ...prevDeck[cardId],
+            x: destAnchor.x,
+            y: destAnchor.y,
+            z: botDrawnCards.length + 999,
+            isFaceUp: isFaceUp || prevDeck[cardId].isFaceUp || false,
+          },
+        }
+      })
+      // Notice: there is no empty array check. It should be handled before calling this function
+      setBotDrawnCards((prev) => [...prev, botHandCards.at(-1)!])
+      setBotHandCards((prev) => prev.slice(0, prev.length - 1))
+    } else if (destAnchor === anchors.playerCurrentCardAnchor) {
+      setDeck((prevDeck) => {
+        return {
+          ...prevDeck,
+          [cardId]: {
+            ...prevDeck[cardId],
+            x: destAnchor.x,
+            y: destAnchor.y,
+            z: playerDrawnCards.length + 999,
+            isFaceUp: isFaceUp || prevDeck[cardId].isFaceUp || false,
+          },
+        }
+      })
+      // Notice: there is no empty array check. It should be handled before calling this function
+      setPlayerDrawnCards((prev) => [...prev, playerHandCards.at(-1)!])
+      setPlayerHandCards((prev) => prev.slice(0, prev.length - 1))
     }
-    setBotDeck(shuffle(botWonCards))
-    setBotWonCards([])
   }
 
-  const ReshufflePlayer = () => {
-    if (playerWonCards.length === 0) {
-      setGameState('gameOver')
-      setMessage('You have no more cards! You lost the game.')
+  const moveAllDrawnCardsToPool = (destAnchor: Anchor | null) => {
+    if (!destAnchor) return
+
+    if (destAnchor === anchors.botPoolCardsAnchor) {
+      const cardIds = [...botDrawnCards, ...playerDrawnCards]
+      setDeck((prevDeck) => {
+        const updatedDeck = { ...prevDeck }
+        cardIds.forEach((cardId, index) => {
+          updatedDeck[cardId] = {
+            ...updatedDeck[cardId],
+            x: destAnchor.x,
+            y: destAnchor.y,
+            z: botPoolCards.length + index + 1,
+            tilt: (Math.random() - 0.5) * 20,
+          }
+        })
+        return updatedDeck
+      })
+      setBotPoolCards((prev) => [
+        ...prev,
+        ...botDrawnCards,
+        ...playerDrawnCards,
+      ])
+      setBotDrawnCards([])
+      setPlayerDrawnCards([])
+      drawnCardTargetRef.current = 1
       return
     }
-    setPlayerDeck(shuffle(playerWonCards))
-    setPlayerWonCards([])
+    if (destAnchor === anchors.playerPoolCardsAnchor) {
+      const cardIds = [...botDrawnCards, ...playerDrawnCards]
+      setDeck((prevDeck) => {
+        const updatedDeck = { ...prevDeck }
+        cardIds.forEach((cardId, index) => {
+          updatedDeck[cardId] = {
+            ...updatedDeck[cardId],
+            x: destAnchor.x,
+            y: destAnchor.y,
+            z: playerPoolCards.length + index + 1,
+            tilt: (Math.random() - 0.5) * 20,
+          }
+        })
+        return updatedDeck
+      })
+      setPlayerPoolCards((prev) => [
+        ...prev,
+        ...botDrawnCards,
+        ...playerDrawnCards,
+      ])
+      setBotDrawnCards([])
+      setPlayerDrawnCards([])
+      drawnCardTargetRef.current = 1
+      return
+    }
+  }
+
+  const resetPoolCardsToDeck = (anchor: Anchor | null) => {
+    if (!anchor) return
+    if (checkGameWinner()) return
+    if (anchor === anchors.playerDeckAnchor) {
+      const resetCardIds = shuffle([...playerHandCards, ...playerPoolCards])
+      resetCardIds.forEach((cardId, index) => {
+        setDeck((prevDeck) => {
+          return {
+            ...prevDeck,
+            [cardId]: {
+              ...prevDeck[cardId],
+              x: (anchors.playerDeckAnchor?.x || 100) - Math.floor(index / 5),
+              y: (anchors.playerDeckAnchor?.y || 100) - Math.floor(index / 5),
+              z: (index + 1) * 10,
+              tilt: 0,
+              isFaceUp: false,
+            },
+          }
+        })
+      })
+      setPlayerHandCards((prev) => resetCardIds)
+      setPlayerPoolCards([])
+    } else if (anchor === anchors.botDeckAnchor) {
+      const resetCardIds = shuffle([...botHandCards, ...botPoolCards])
+      resetCardIds.forEach((cardId, index) => {
+        setDeck((prevDeck) => {
+          return {
+            ...prevDeck,
+            [cardId]: {
+              ...prevDeck[cardId],
+              x: (anchors.botDeckAnchor?.x || 100) - Math.floor(index / 5),
+              y: (anchors.botDeckAnchor?.y || 100) - Math.floor(index / 5),
+              z: (index + 1) * 10,
+              tilt: 0,
+              isFaceUp: false,
+            },
+          }
+        })
+      })
+      setBotHandCards((prev) => resetCardIds)
+      setBotPoolCards([])
+    }
+  }
+
+  const handlePlayerDeckClick = (cardId: string) => {
+    if (gameState !== 'playing' && gameState !== 'war') return
+    if (
+      !allowToDraw(
+        gameState,
+        playerDrawnCards.length,
+        drawnCardTargetRef.current
+      )
+    )
+      return
+
+    // Disable click if card is not on top of hand
+    if (playerHandCards.at(-1) !== cardId) return
+    let cardFaceUp = true
+    if (
+      gameState === 'war' &&
+      playerDrawnCards.length < drawnCardTargetRef.current - 1
+    )
+      cardFaceUp = false // face down for first 3 war cards
+    moveCard(cardId, anchors.playerCurrentCardAnchor, cardFaceUp)
   }
 
   const checkGameWinner = () => {
-    if (playerDeck.length === 0) ReshufflePlayer()
-    if (botDeck.length === 0) ReshuffleBot()
-    if (playerDeck.length === 0 && playerWonCards.length === 0) {
+    if (playerHandCards.length === 0 && playerPoolCards.length === 0) {
       setGameState('gameOver')
       setMessage('You have no more cards! You lost the game.')
+      return true
     }
-    if (botDeck.length === 0 && botWonCards.length === 0) {
+    if (botHandCards.length === 0 && botPoolCards.length === 0) {
       setGameState('gameOver')
       setMessage('Computer has no more cards! You won the game!')
+      return true
     }
+    return false
   }
 
   return (
     <div className={`${styles.game} sm:p-4`}>
       <motion.div
-        className={`${styles.board} ${
+        ref={boardRef}
+        className={`relative ${styles.board} ${
           gameState === 'war' ? 'bg-red-900' : 'bg-green-900'
         }`}
         initial={{ x: -100, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.4, delay: 0.1 }}
       >
-        <h1 className='text-2xl sm:text-3xl font-bold text-white text-center p-4 sm:p-8'>
+        {Object.values(deck).map((card, index) => (
+          <motion.div
+            key={index}
+            className={styles.card}
+            style={{
+              position: 'absolute',
+              left: `${card.x}px`,
+              top: `${card.y}px`,
+              zIndex: card.z,
+              boxShadow: 'none',
+              transformOrigin: 'center center',
+            }}
+            initial={{
+              x: '-50%',
+              y: '-50%',
+              left: `${card.x}px`,
+              top: `${card.y}px`,
+              zIndex: card.z,
+              rotate: card.tilt ?? 0,
+            }}
+            animate={{
+              x: '-50%',
+              y: '-50%',
+              left: `${card.x}px`,
+              top: `${card.y}px`,
+              zIndex: card.z,
+              rotate: card.tilt ?? 0,
+            }}
+            transition={{ duration: 0.6, ease: 'easeInOut' }}
+            onClick={() => handlePlayerDeckClick(card.id)}
+          >
+            {card.isFaceUp ? (
+              <Image
+                src={getCardSvgPath(card)}
+                alt={`${card.rank} of ${card.suit}`}
+                sizes='100vw'
+                fill
+                className={styles.card}
+              />
+            ) : (
+              <Image
+                src={cardBackImgUri}
+                alt='Card back'
+                sizes='100vw'
+                fill
+                className={styles.card}
+              />
+            )}
+          </motion.div>
+        ))}
+        <h1 className='text-2xl sm:text-3xl font-bold text-white text-center p-4 pb-8 sm:p-8 sm:pb-16'>
           War
         </h1>
         <div className='w-[60%] mx-auto my-2 sm:my-8 flex flex-col items-center justify-center gap-20'>
           <div className='grid grid-cols-3 gap-12 justify-items-center items-center'>
             <div></div>
-            <div className={styles.deckSlot}>
-              {/* Bot deck slot */}
-              {botDeck.length > 0 && (
-                <div className={styles.card}>
-                  <Image
-                    src={cardBackImgUri}
-                    alt='Bot deck'
-                    sizes='100vw'
-                    fill
-                  />
-                  <div className='absolute inset-0 flex items-center justify-center'>
-                    <span className='text-white text-xs font-bold bg-black bg-opacity-50 px-2 py-1 rounded'>
-                      {botDeck.length} cards
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className='flex items-center justify-center'>
-              <span>BOT won {botWonCards.length} cards</span>
-            </div>
+            {/* Bot deck anchor */}
+            <div ref={botDeckPosRef} className={styles.emptyCardSlot} />
+            {/* Bot won cards anchor */}
+            <div ref={botCardPoolPosRef} className={styles.emptyCardSlot} />
           </div>
           <div className='flex flex-row justify-center w-1/2'>
             <div className={styles.slotsContainer}>
-              <div className={styles.cardSlot}>
-                {currentBotCard.length > 0 ? (
-                  <motion.div
-                    className={styles.card}
-                    initial={{ x: 50, y: -150 }}
-                    animate={{ x: 0, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    <Image
-                      src={getCardSvgPath(
-                        currentBotCard[currentBotCard.length - 1]
-                      )}
-                      alt={`${
-                        currentBotCard[currentBotCard.length - 1].rank
-                      } of ${currentBotCard[currentBotCard.length - 1].suit}`}
-                      sizes='100vw'
-                      fill
-                    />
-                  </motion.div>
-                ) : (
-                  <div className={styles.emptyCardSlot}>
-                    <span className={styles.emptySlotText}>Bot Card</span>
-                  </div>
-                )}
+              {/* Current bot cards anchor */}
+              <div ref={botDrawnCardPosRef} className={styles.DrawSlot}>
+                <span className={styles.emptySlotText}>Bot Card</span>
               </div>
-              <div className={styles.cardSlot}>
-                {currentPlayerCard.length > 0 ? (
-                  <motion.div
-                    className={styles.card}
-                    initial={{ x: -50, y: 150 }}
-                    animate={{ x: 0, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    <Image
-                      src={getCardSvgPath(
-                        currentPlayerCard[currentPlayerCard.length - 1]
-                      )}
-                      alt={`${
-                        currentPlayerCard[currentPlayerCard.length - 1].rank
-                      } of ${
-                        currentPlayerCard[currentPlayerCard.length - 1].suit
-                      }`}
-                      sizes='100vw'
-                      fill
-                    />
-                  </motion.div>
-                ) : (
-                  <div className={styles.emptyCardSlot}>
-                    <span className={styles.emptySlotText}>Player Card</span>
-                  </div>
-                )}
+              {/* Current player cards anchor */}
+              <div ref={playerDrawnCardPosRef} className={styles.DrawSlot}>
+                <span className={styles.emptySlotText}>Player Card</span>
               </div>
             </div>
           </div>
           <div className='grid grid-cols-3 gap-12 justify-items-center'>
-            <div className='flex items-center justify-center'>
-              <span>PLAYER won {playerWonCards.length} cards</span>
-            </div>
-            <div className={styles.deckSlot}>
-              {/* Player deck slot */}
-              {playerDeck.length > 0 && (
-                <motion.div
-                  className={styles.card}
-                  onClick={drawPlayerCard}
-                  aria-disabled={
-                    isComparing ||
-                    isDrawing ||
-                    ((gameState !== 'playing' ||
-                      currentPlayerCard.length > 0) &&
-                      (gameState !== 'war' ||
-                        currentPlayerCard.length >= WAR_CARDS_COUNT))
-                  }
-                  style={{}}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Image
-                    src={cardBackImgUri}
-                    alt='Click to draw card'
-                    sizes='100vw'
-                    fill
-                    className='object-contain'
-                  />
-                  <div className='absolute inset-0 flex items-center justify-center'>
-                    <span className='text-white text-xs font-bold bg-black bg-opacity-50 px-2 py-1 rounded'>
-                      {playerDeck.length} cards
-                    </span>
-                  </div>
-                </motion.div>
-              )}
-            </div>
+            {/* Player won cards anchor */}
+            <div ref={playerCardPoolPosRef} className={styles.emptyCardSlot} />
+            {/* Player deck anchor */}
+            <div ref={playerDeckPosRef} className={styles.emptyCardSlot} />
           </div>
           <div></div>
         </div>
         <div className='text-center mb-4'>
           {gameState === 'init' && (
             <motion.button
-              className='px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors'
+              className={`px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors ${
+                !refsReady ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
               onClick={init}
               whileTap={{ scale: 0.95 }}
+              disabled={!refsReady}
             >
               Deal Cards
             </motion.button>

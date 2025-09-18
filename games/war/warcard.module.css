@@ -12,7 +12,7 @@
 }
 
 .board {
-  @apply w-full flex flex-col sm:max-w-4xl mx-auto rounded-none sm:rounded-3xl shadow-lg p-2 sm:p-4 relative
+  @apply w-full flex flex-col sm:max-w-4xl mx-auto rounded-none sm:rounded-3xl shadow-lg p-2 sm:p-4 transition-colors duration-500
 }
 
 .howToPlay {
@@ -32,6 +32,14 @@
 }
 
 .deckSlot {
+  width: var(--card-width);
+  height: var(--card-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.DrawSlot {
   position: relative;
   width: var(--card-width);
   height: var(--card-height);
@@ -40,16 +48,7 @@
   justify-content: center;
 }
 
-.cardSlot {
-  position: relative;
-  width: var(--card-width);
-  height: var(--card-height);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.cardSlot::before {
+.DrawSlot::before {
   content: '';
   position: absolute;
   width: var(--card-width);
@@ -63,10 +62,6 @@
 .emptyCardSlot {
   width: var(--card-width);
   height: var(--card-height);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .emptySlotText {
@@ -77,33 +72,18 @@
 }
 
 .card {
-  position: relative;
   width: var(--card-width);
   height: var(--card-height);
-  border-radius: 8px;
+  border-radius: 0.3rem;
   border: none;
   perspective: 1000px;
-  object-fit: cover;
   z-index: 10;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-  transition: box-shadow 0.3s ease;
   cursor: pointer;
-  user-select: none;}
+  user-select: none;
+}
 
 .card:hover {
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
-}
-
-.cardStack {
-  width: var(--card-width);
-  height: var(--card-height);
-  position: relative;
-  cursor: pointer;
-  transition: transform 0.2s ease;
-}
-
-.cardStack:hover {
-  transform: translateY(-2px);
 }
 
 .emptyStack {
@@ -131,6 +111,7 @@
     opacity: 0;
     transform: translateY(-20px) rotateY(180deg);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) rotateY(0deg);
@@ -142,6 +123,7 @@
     opacity: 1;
     transform: translateY(0) scale(1);
   }
+
   to {
     opacity: 0;
     transform: translateY(20px) scale(0.8);
@@ -163,12 +145,12 @@
   .board {
     @apply p-2;
   }
-  
+
   .game {
     --card-width: 64px;
     --card-height: 93px;
   }
-  
+
   .gameTitle {
     @apply text-xl p-2;
   }
@@ -180,10 +162,12 @@
     transform: translateY(-120px) scale(0.7) rotate(-10deg);
     opacity: 0.2;
   }
+
   80% {
     transform: translateY(10px) scale(1.05) rotate(-2deg);
     opacity: 1;
   }
+
   100% {
     transform: translateY(0) scale(1) rotate(0deg);
     opacity: 1;
