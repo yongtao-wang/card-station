@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 Disallow: /?q=
-Sitemap: /sitemap.xml
+Sitemap: https://www.cardstation.games/sitemap.xml
