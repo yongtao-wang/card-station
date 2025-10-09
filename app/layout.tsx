@@ -6,6 +6,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next'
 import type { Metadata } from 'next'
 import { site } from '@/lib/site'
 import { games, type GameMeta } from '@/games/index'
+import { PageTracker } from '@/components/PageTracker'
 
 export const metadata: Metadata = {
   metadataBase: site.url ? new URL(site.url) : undefined,
@@ -39,8 +40,8 @@ export const metadata: Metadata = {
     },
   },
   icons: [{ rel: 'icon', url: '/favicon.ico' }],
-  alternates: { 
-    canonical: site.url || undefined 
+  alternates: {
+    canonical: site.url || undefined,
   },
   openGraph: {
     title: 'Card Station — Free Online Card Games',
@@ -88,6 +89,7 @@ export default function RootLayout({
         <Footer />
         <Analytics />
         <SpeedInsights />
+        <PageTracker />
         {/* Global structured data for the site & games */}
         <script
           type='application/ld+json'

@@ -25,7 +25,7 @@ export const metadata: Metadata = {
           : '/assets/img/og/holdem_og.webp',
         width: 500,
         height: 300,
-        alt: 'Card Station - Play Texas Hold\'em Free Online',
+        alt: "Card Station - Play Texas Hold'em Free Online",
       },
       {
         url: site.url
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
           : '/assets/img/og/blackjack_og.webp',
         width: 500,
         height: 300,
-        alt: "Card Station - Play Blackjack Free Online",
+        alt: 'Card Station - Play Blackjack Free Online',
       },
     ],
   },
@@ -104,30 +104,27 @@ export default function HomePage() {
               Now Trending
             </div>
             <div className='mt-3 grid grid-cols-3 gap-3'>
-                <Link
+              <Link
                 href='/games/holdem'
                 className='btn-shimmer aspect-[5/3] rounded-lg flex flex-row items-center justify-center gap-2 text-sm font-semibold text-white/90'
                 style={{
-                  background: `url('/assets/img/og/holdem_og.webp') center/cover no-repeat`
+                  background: `url('/assets/img/og/holdem_og.webp') center/cover no-repeat`,
                 }}
-                >
-                </Link>
+              ></Link>
               <Link
                 href='/games/flipcard'
                 className='btn-shimmer aspect-[5/3] rounded-lg flex flex-row items-center justify-center gap-2 text-sm font-semibold text-white/90'
                 style={{
-                  background: `url('/assets/img/og/flipcard_og.webp') center/cover no-repeat`
+                  background: `url('/assets/img/og/flipcard_og.webp') center/cover no-repeat`,
                 }}
-              >
-              </Link>
+              ></Link>
               <Link
                 href='/games/snap'
                 className='btn-shimmer aspect-[5/3] rounded-lg flex flex-row items-center justify-center gap-2 text-sm font-semibold text-white/90'
                 style={{
-                  background: `url('/assets/img/og/snap_og.webp') center/cover no-repeat`
+                  background: `url('/assets/img/og/snap_og.webp') center/cover no-repeat`,
                 }}
-              >
-              </Link>
+              ></Link>
             </div>
           </div>
         </div>
@@ -135,7 +132,12 @@ export default function HomePage() {
 
       <section className='recommendation'>
         {games.map((g) => (
-          <GameCard key={g.slug} title={g.title} description={g.description} slug={g.slug} />
+          <GameCard
+            key={g.slug}
+            title={g.title}
+            description={g.description}
+            slug={g.slug}
+          />
         ))}
       </section>
     </div>
