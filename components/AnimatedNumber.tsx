@@ -11,7 +11,7 @@ export default function AnimatedNumber({ value }: { value: number }) {
     mass: 1,
   })
   const rounded = useTransform(spring, (latest) =>
-    Math.round(latest).toLocaleString()
+    Math.max(0, Math.round(latest)).toLocaleString()
   )
 
   useEffect(() => {
