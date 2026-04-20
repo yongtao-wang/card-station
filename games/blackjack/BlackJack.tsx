@@ -17,6 +17,28 @@ export default function BlackJack() {
   const [cardOffset, setCardOffset] = useState(CARD_OFFSET_MOBILE)
   const { state, actions, signalAnimationComplete } = useBlackjackGame()
 
+  const activeHand = state.hands[state.activeHandIndex]
+  const activeCards = activeHand?.cards ?? []
+
+  const canDouble =
+    state.phase === 'player-turn' &&
+    activeCards.length === 2 &&
+    state.playerChips >= (activeHand?.bet ?? 0)
+
+  const canSplit =
+    state.phase === 'player-turn' &&
+    activeCards.length === 2 &&
+    activeCards[0]?.rank === activeCards[1]?.rank &&
+    state.playerChips >= (activeHand?.bet ?? 0)
+
+  const canSurrender =
+    state.phase === 'player-turn' &&
+    state.hands.length === 1 &&
+    activeCards.length === 2
+
+  const insuranceCost = Math.floor((activeHand?.bet ?? 0) / 2)
+  const canAffordInsurance = state.playerChips >= insuranceCost
+
   useEffect(() => {
     const updateCardOffset = () => {
       setCardOffset(
@@ -55,10 +77,16 @@ export default function BlackJack() {
             onAnimationComplete={signalAnimationComplete}
           />
 
-          <BetDisplay betAmount={state.phase === 'betting' ? state.betAmount : state.currentBet} />
+          <BetDisplay
+            betAmount={state.betAmount}
+            hands={state.hands}
+            isBetting={state.phase === 'betting'}
+          />
 
           <PlayerHand
-            hand={state.playerHand}
+            hands={state.hands}
+            activeHandIndex={state.activeHandIndex}
+            phase={state.phase}
             cardOffset={cardOffset}
             onAnimationComplete={signalAnimationComplete}
           />
@@ -76,9 +104,19 @@ export default function BlackJack() {
               phase={state.phase}
               animationLock={state.animationLock}
               autoPlayEnabled={state.autoPlayEnabled}
+              canDouble={canDouble}
+              canSplit={canSplit}
+              canSurrender={canSurrender}
+              canAffordInsurance={canAffordInsurance}
+              insuranceCost={insuranceCost}
               startHand={actions.startHand}
               hit={actions.hit}
               stand={actions.stand}
+              doubleDown={actions.doubleDown}
+              split={actions.split}
+              surrender={actions.surrender}
+              takeInsurance={actions.takeInsurance}
+              declineInsurance={actions.declineInsurance}
               toggleAutoPlay={actions.toggleAutoPlay}
             />
           </div>
@@ -124,6 +162,23 @@ export default function BlackJack() {
             card, or <span className='font-semibold'>Stand</span> to end your
             turn.
           </li>
+          <li>
+            <span className='font-semibold'>Double Down</span> to double your
+            bet, receive one card, and auto-stand.
+          </li>
+          <li>
+            <span className='font-semibold'>Split</span> matching pairs into
+            two hands, each played independently.
+          </li>
+          <li>
+            <span className='font-semibold'>Surrender</span> to forfeit half
+            your bet and end the hand.
+          </li>
+          <li>
+            <span className='font-semibold'>Insurance</span> is offered when
+            the dealer shows an Ace — a side bet paying 2:1 if the dealer has
+            blackjack.
+          </li>
           <li>The dealer must hit until reaching at least 17.</li>
           <li>
             If you beat the dealer or the dealer busts, you win double your
@@ -139,9 +194,9 @@ export default function BlackJack() {
         </h3>
         <p className='mb-2 sm:mb-3 text-sm sm:text-base'>
           <strong>Auto Play</strong> uses a simplified{' '}
-          <em>basic strategy</em> that considers only your current hand
-          (hard/soft total) and the dealer&apos;s upcard. It never peeks at
-          the deck or any hidden cards.
+          <em>basic strategy</em> that considers your current hand
+          (hard/soft total), the dealer&apos;s upcard, and available actions
+          (double, split, surrender).
         </p>
         <ul className='list-disc ml-4 sm:ml-6 mb-2 sm:mb-3 text-sm sm:text-base'>
           <li>
@@ -154,8 +209,17 @@ export default function BlackJack() {
             vs 9/A; soft 13–17 hit.
           </li>
           <li>
-            <strong>Double/Split:</strong> Not automated in this MVP;
-            candidates are treated as hit.
+            <strong>Double:</strong> Hard 11 always; 10 vs 2–9; 9 vs 3–6.
+            Soft 13–17 vs 5–6; soft 18 vs 3–6.
+          </li>
+          <li>
+            <strong>Split:</strong> Always A/A and 8/8. Never 10s or 5s.
+          </li>
+          <li>
+            <strong>Surrender:</strong> 16 vs 9/10/A; 15 vs 10.
+          </li>
+          <li>
+            <strong>Insurance:</strong> Always declined (basic strategy).
           </li>
         </ul>
         <p className='mb-0 text-sm sm:text-base'>

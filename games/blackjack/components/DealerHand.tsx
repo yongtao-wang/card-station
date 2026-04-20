@@ -39,7 +39,6 @@ export function DealerHand({
             idx={idx}
             cardOffset={cardOffset}
             flyFrom={{ x: 350, y: 150 }}
-            isLatest={idx === hand.length - 1}
             onAnimationComplete={onAnimationComplete}
           />
         ))}

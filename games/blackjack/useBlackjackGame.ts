@@ -12,6 +12,10 @@ export function useBlackjackGame() {
   const { signalAnimationComplete, waitForAnimation, delay, enqueue, cleanup, mountedRef } =
     useAnimationSequencer()
   const autoPlayTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const insuranceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const activeHand = state.hands[state.activeHandIndex]
+  const activeCards = activeHand?.cards ?? []
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -23,6 +27,7 @@ export function useBlackjackGame() {
     return () => {
       cleanup()
       if (autoPlayTimeoutRef.current) clearTimeout(autoPlayTimeoutRef.current)
+      if (insuranceTimeoutRef.current) clearTimeout(insuranceTimeoutRef.current)
     }
   }, [])
 
@@ -33,19 +38,50 @@ export function useBlackjackGame() {
     localStorage.setItem('bj_losses', String(state.losses))
   }, [state.playerChips, state.wins, state.losses])
 
-  // Auto-play
+  // Auto-play: always decline insurance
+  useEffect(() => {
+    if (!state.autoPlayEnabled) return
+    if (state.phase !== 'insurance-prompt') return
+
+    autoPlayTimeoutRef.current = setTimeout(() => {
+      declineInsurance()
+    }, 700)
+
+    return () => {
+      if (autoPlayTimeoutRef.current) clearTimeout(autoPlayTimeoutRef.current)
+    }
+  }, [state.autoPlayEnabled, state.phase])
+
+  // Auto-play: player turn decisions
   useEffect(() => {
     if (!state.autoPlayEnabled) return
     if (state.phase !== 'player-turn') return
     if (state.animationLock) return
-    if (calculateHandValue(state.playerHand) > 21) return
+    if (!activeHand || calculateHandValue(activeCards) > 21) return
+
+    const canSplit = activeCards.length === 2
+      && activeCards[0].rank === activeCards[1].rank
+      && state.playerChips >= activeHand.bet
+      && state.hands.length === 1 // only allow one split in auto-play
+    const canDouble = activeCards.length === 2 && state.playerChips >= activeHand.bet
+    const canSurrenderNow = activeCards.length === 2 && state.hands.length === 1
 
     const decision = basicStrategyDecision(
-      state.playerHand,
-      state.dealerHand[0]
+      activeCards,
+      state.dealerHand[0],
+      canSplit,
+      canDouble,
+      canSurrenderNow
     )
+
     autoPlayTimeoutRef.current = setTimeout(() => {
-      if (decision === 'hit') {
+      if (decision === 'split') {
+        split()
+      } else if (decision === 'double') {
+        doubleDown()
+      } else if (decision === 'surrender') {
+        surrender()
+      } else if (decision === 'hit') {
         hit()
       } else {
         stand()
@@ -55,7 +91,7 @@ export function useBlackjackGame() {
     return () => {
       if (autoPlayTimeoutRef.current) clearTimeout(autoPlayTimeoutRef.current)
     }
-  }, [state.autoPlayEnabled, state.phase, state.animationLock, state.playerHand, state.dealerHand])
+  }, [state.autoPlayEnabled, state.phase, state.animationLock, state.hands, state.activeHandIndex, state.dealerHand])
 
   const addToBet = useCallback(
     (amount: number) => {
@@ -70,14 +106,7 @@ export function useBlackjackGame() {
       dispatch({ type: 'SET_MESSAGE', message: 'Not enough chips to bet.' })
       return
     }
-
     dispatch({ type: 'START_HAND' })
-
-    // The deck is created inside the reducer via START_HAND.
-    // We need to read it after dispatch. Since dispatch is sync in React,
-    // we can schedule the deal sequence on the next tick.
-    // However, we don't have the new deck here. Instead, we'll use a ref-based
-    // approach: the deal sequence reads from state via an effect.
   }, [state.playerChips, state.betAmount])
 
   // Effect to kick off dealing sequence when phase becomes 'dealing'
@@ -91,34 +120,28 @@ export function useBlackjackGame() {
     if (state.deck.length < 4) return
     dealingStartedRef.current = true
 
-    // Read the deck cards we'll deal
     const card1 = { ...state.deck[0], faceDown: false }
     const card2 = { ...state.deck[1], faceDown: false }
     const card3 = { ...state.deck[2], faceDown: false }
     const card4 = { ...state.deck[3], faceDown: true }
 
     enqueue([
-      // Player card 1
       async () => {
         dispatch({ type: 'DEAL_CARD_TO_PLAYER', card: card1 })
         await waitForAnimation()
       },
-      // Dealer card 1
       async () => {
         dispatch({ type: 'DEAL_CARD_TO_DEALER', card: card2 })
         await waitForAnimation()
       },
-      // Player card 2
       async () => {
         dispatch({ type: 'DEAL_CARD_TO_PLAYER', card: card3 })
         await waitForAnimation()
       },
-      // Dealer card 2 (face down)
       async () => {
         dispatch({ type: 'DEAL_CARD_TO_DEALER', card: card4, faceDown: true })
         await waitForAnimation()
       },
-      // Dealing complete
       async () => {
         dispatch({ type: 'DEALING_COMPLETE' })
       },
@@ -135,31 +158,32 @@ export function useBlackjackGame() {
     if (dealerRevealStartedRef.current) return
     dealerRevealStartedRef.current = true
 
-    // Pre-compute dealer hits from current state
     const revealedHand = state.dealerHand.map((c) => ({
       ...c,
       faceDown: false,
     }))
     const { hits } = computeDealerHits(revealedHand, state.deck)
 
+    // Check if all player hands are busted — skip dealer play
+    const allBusted = state.hands.every((h) => h.result === 'busted')
+
     const steps: (() => Promise<void>)[] = []
 
-    // Step 1: Flip the hole card
     steps.push(async () => {
       dispatch({ type: 'REVEAL_DEALER_HOLE_CARD' })
-      await delay(600) // Let flip animation play (0.5s + buffer)
+      await delay(600)
     })
 
-    // Step 2: Dealer hits one by one
-    for (const card of hits) {
-      steps.push(async () => {
-        dispatch({ type: 'DEALER_HIT', card })
-        await waitForAnimation()
-        await delay(300) // Brief pause between hits
-      })
+    if (!allBusted) {
+      for (const card of hits) {
+        steps.push(async () => {
+          dispatch({ type: 'DEALER_HIT', card })
+          await waitForAnimation()
+          await delay(300)
+        })
+      }
     }
 
-    // Step 3: Dealer stands, pause, resolve
     steps.push(async () => {
       dispatch({ type: 'DEALER_STAND' })
       await delay(800)
@@ -185,7 +209,16 @@ export function useBlackjackGame() {
 
     enqueue([
       async () => {
-        await delay(1200)
+        // Keep behavior consistent with dealer-revealing: always flip the dealer hole card
+        // before resolving, even if the player already busted.
+        if (state.dealerHand.some((c) => c.faceDown)) {
+          dispatch({ type: 'REVEAL_DEALER_HOLE_CARD' })
+          await delay(600)
+        } else {
+          await delay(300)
+        }
+
+        await delay(600)
         dispatch({ type: 'RESOLVE_HAND' })
         await delay(2000)
         if (mountedRef.current) {
@@ -195,15 +228,42 @@ export function useBlackjackGame() {
     ])
   }, [state.phase])
 
+  // Effect to handle switching between split hands
+  // The reducer sets phase to 'switching-hand' when a hand is done and more remain.
+  // This effect deals a card to the new active hand. The reducer's DEAL_CARD_TO_HAND
+  // handles the phase transition to 'player-turn' (or 'dealer-revealing' for split aces).
+  const switchingHandRef = useRef(false)
+  useEffect(() => {
+    if (state.phase !== 'switching-hand') {
+      switchingHandRef.current = false
+      return
+    }
+    if (switchingHandRef.current) return
+    switchingHandRef.current = true
+
+    const hand = state.hands[state.activeHandIndex]
+    if (!hand || hand.cards.length >= 2) return
+
+    const card = { ...state.deck[0], faceDown: false }
+    enqueue([
+      async () => {
+        await delay(500)
+        dispatch({ type: 'DEAL_CARD_TO_HAND', handIndex: state.activeHandIndex, card })
+        await waitForAnimation()
+        // Phase transition is handled by the reducer in DEAL_CARD_TO_HAND
+      },
+    ])
+  }, [state.phase, state.activeHandIndex])
+
   const hit = useCallback(() => {
-    if (state.phase !== 'player-turn' || state.animationLock) return
+    if (state.phase !== 'player-turn') return
+    if (state.animationLock) return
     const card = { ...state.deck[0], faceDown: false }
     dispatch({ type: 'HIT', card })
 
     enqueue([
       async () => {
         await waitForAnimation()
-        // Unlock after animation if not busted (reducer handles bust lock)
         if (mountedRef.current) {
           dispatch({ type: 'SET_ANIMATION_LOCK', locked: false })
         }
@@ -212,9 +272,109 @@ export function useBlackjackGame() {
   }, [state.phase, state.animationLock, state.deck])
 
   const stand = useCallback(() => {
-    if (state.phase !== 'player-turn' || state.animationLock) return
+    if (state.phase !== 'player-turn') return
+    if (state.animationLock) return
     dispatch({ type: 'STAND' })
   }, [state.phase, state.animationLock])
+
+  const doubleDown = useCallback(() => {
+    if (state.phase !== 'player-turn') return
+    if (state.animationLock) return
+    if (!activeHand || activeCards.length !== 2) return
+    if (state.playerChips < activeHand.bet) return
+
+    const card = { ...state.deck[0], faceDown: false }
+    dispatch({ type: 'DOUBLE_DOWN', card })
+
+    enqueue([
+      async () => {
+        await waitForAnimation()
+        if (mountedRef.current) {
+          dispatch({ type: 'SET_ANIMATION_LOCK', locked: false })
+        }
+      },
+    ])
+  }, [state.phase, state.animationLock, state.deck, activeHand, activeCards, state.playerChips])
+
+  const split = useCallback(() => {
+    if (state.phase !== 'player-turn') return
+    if (state.animationLock) return
+    if (!activeHand || activeCards.length !== 2) return
+    if (activeCards[0].rank !== activeCards[1].rank) return
+    if (state.playerChips < activeHand.bet) return
+
+    const isAces = activeCards[0].rank === 'A'
+    dispatch({ type: 'SPLIT' })
+
+    // Deal a card to the first split hand
+    // Note: SPLIT doesn't consume deck cards, so deck[0] is the next card
+    const card1 = { ...state.deck[0], faceDown: false }
+
+    enqueue([
+      async () => {
+        await delay(300)
+        dispatch({ type: 'DEAL_CARD_TO_HAND', handIndex: state.activeHandIndex, card: card1 })
+        await waitForAnimation()
+
+        if (isAces) {
+          // For split aces: deal card to second hand too
+          // deck[0] was consumed by first DEAL_CARD_TO_HAND, so use deck[1]
+          const card2 = { ...state.deck[1], faceDown: false }
+          await delay(300)
+          dispatch({ type: 'DEAL_CARD_TO_HAND', handIndex: state.activeHandIndex + 1, card: card2 })
+          await waitForAnimation()
+          // Reducer handles transition to dealer-revealing when all hands are stood
+        } else {
+          // For non-aces: reducer transitions to player-turn via DEAL_CARD_TO_HAND
+          // (phase transition happens in reducer when switching-hand + 2 cards)
+          // But we're currently in player-turn, not switching-hand.
+          // The DEAL_CARD_TO_HAND for hand 0 gives it 2 cards. Phase stays player-turn.
+          dispatch({ type: 'SET_ANIMATION_LOCK', locked: false })
+          dispatch({ type: 'SET_MESSAGE', message: 'Playing hand 1. Your turn!' })
+        }
+      },
+    ])
+  }, [state.phase, state.animationLock, state.deck, activeHand, activeCards, state.playerChips, state.activeHandIndex])
+
+  const surrender = useCallback(() => {
+    if (state.phase !== 'player-turn') return
+    if (state.animationLock) return
+    if (state.hands.length !== 1) return
+    if (!activeHand || activeCards.length !== 2) return
+
+    dispatch({ type: 'SURRENDER' })
+
+    enqueue([
+      async () => {
+        await delay(800)
+        dispatch({ type: 'RESOLVE_HAND' })
+        await delay(2000)
+        if (mountedRef.current) {
+          dispatch({ type: 'RETURN_TO_BETTING' })
+        }
+      },
+    ])
+  }, [state.phase, state.animationLock, state.hands.length, activeHand, activeCards])
+
+  const takeInsurance = useCallback(() => {
+    if (state.phase !== 'insurance-prompt') return
+    dispatch({ type: 'TAKE_INSURANCE' })
+    dispatch({ type: 'SET_ANIMATION_LOCK', locked: true })
+    if (insuranceTimeoutRef.current) clearTimeout(insuranceTimeoutRef.current)
+    insuranceTimeoutRef.current = setTimeout(() => {
+      if (mountedRef.current) dispatch({ type: 'RESOLVE_INSURANCE' })
+    }, 300)
+  }, [state.phase])
+
+  const declineInsurance = useCallback(() => {
+    if (state.phase !== 'insurance-prompt') return
+    dispatch({ type: 'DECLINE_INSURANCE' })
+    dispatch({ type: 'SET_ANIMATION_LOCK', locked: true })
+    if (insuranceTimeoutRef.current) clearTimeout(insuranceTimeoutRef.current)
+    insuranceTimeoutRef.current = setTimeout(() => {
+      if (mountedRef.current) dispatch({ type: 'RESOLVE_INSURANCE' })
+    }, 150)
+  }, [state.phase])
 
   const toggleAutoPlay = useCallback(() => {
     dispatch({ type: 'TOGGLE_AUTO_PLAY' })
@@ -234,6 +394,11 @@ export function useBlackjackGame() {
       startHand,
       hit,
       stand,
+      doubleDown,
+      split,
+      surrender,
+      takeInsurance,
+      declineInsurance,
       toggleAutoPlay,
       resetChips,
     },

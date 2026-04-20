@@ -1,18 +1,24 @@
 import {
   BlackjackState,
   GameAction,
+  Hand,
   PLAYER_INIT_CHIPS,
 } from './types'
 import { calculateHandValue, createDeck, shuffleDeck } from './gameLogic'
 
+function createHand(bet: number): Hand {
+  return { cards: [], bet, result: 'pending', isDoubled: false }
+}
+
 export const initialState: BlackjackState = {
   phase: 'betting',
   deck: [],
-  playerHand: [],
+  hands: [],
+  activeHandIndex: 0,
   dealerHand: [],
   playerChips: PLAYER_INIT_CHIPS,
-  currentBet: 0,
   betAmount: 0,
+  insuranceBet: 0,
   wins: 0,
   losses: 0,
   message: '',
@@ -64,19 +70,22 @@ export function gameReducer(
         ...state,
         phase: 'dealing',
         deck: newDeck,
-        playerHand: [],
+        hands: [createHand(state.betAmount)],
+        activeHandIndex: 0,
         dealerHand: [],
-        currentBet: state.betAmount,
         playerChips: state.playerChips - state.betAmount,
+        insuranceBet: 0,
         message: 'Dealing cards...',
         animationLock: true,
       }
     }
 
     case 'DEAL_CARD_TO_PLAYER': {
+      const newHands = [...state.hands]
+      newHands[0] = { ...newHands[0], cards: [...newHands[0].cards, action.card] }
       return {
         ...state,
-        playerHand: [...state.playerHand, action.card],
+        hands: newHands,
         deck: state.deck.slice(1),
       }
     }
@@ -93,16 +102,26 @@ export function gameReducer(
     }
 
     case 'DEALING_COMPLETE': {
-      const playerValue = calculateHandValue(state.playerHand)
-      const dealerVisibleCard = state.dealerHand.find((c) => !c.faceDown)
+      const hand = state.hands[0]
+      const playerValue = calculateHandValue(hand.cards)
+      const dealerUpcard = state.dealerHand.find((c) => !c.faceDown)
       const dealerFullValue = calculateHandValue(
         state.dealerHand.map((c) => ({ ...c, faceDown: false }))
       )
 
+      // Insurance prompt: dealer shows Ace
+      if (dealerUpcard?.rank === 'A') {
+        return {
+          ...state,
+          phase: 'insurance-prompt',
+          message: 'Insurance? Dealer shows an Ace.',
+          animationLock: false,
+        }
+      }
+
       // Natural blackjack check
       if (playerValue === 21) {
         if (dealerFullValue === 21) {
-          // Both have blackjack — push, but need to reveal dealer first
           return {
             ...state,
             phase: 'dealer-revealing',
@@ -110,7 +129,6 @@ export function gameReducer(
             animationLock: true,
           }
         }
-        // Player natural blackjack — skip to dealer reveal then pay 3:2
         return {
           ...state,
           phase: 'dealer-revealing',
@@ -127,15 +145,103 @@ export function gameReducer(
       }
     }
 
-    case 'HIT': {
-      const newHand = [...state.playerHand, action.card]
-      const value = calculateHandValue(newHand)
-      const deck = state.deck.slice(1)
+    case 'TAKE_INSURANCE': {
+      const hand = state.hands[state.activeHandIndex]
+      const insuranceAmount = Math.floor(hand.bet / 2)
+      if (state.playerChips < insuranceAmount) return state
+      return {
+        ...state,
+        insuranceBet: insuranceAmount,
+        playerChips: state.playerChips - insuranceAmount,
+        message: 'Insurance taken.',
+      }
+    }
 
-      if (value > 21) {
+    case 'DECLINE_INSURANCE':
+      return { ...state, insuranceBet: 0 }
+
+    case 'RESOLVE_INSURANCE': {
+      const dealerFullValue = calculateHandValue(
+        state.dealerHand.map((c) => ({ ...c, faceDown: false }))
+      )
+      const dealerHasBlackjack = dealerFullValue === 21 && state.dealerHand.length === 2
+      const hand = state.hands[0]
+      const playerValue = calculateHandValue(hand.cards)
+      const playerHasBlackjack = playerValue === 21 && hand.cards.length === 2
+
+      if (dealerHasBlackjack) {
+        let chips = state.playerChips
+        if (state.insuranceBet > 0) {
+          chips += state.insuranceBet * 3 // return bet + 2:1 winnings
+        }
+        if (playerHasBlackjack) {
+          chips += hand.bet // push on main bet
+          return {
+            ...state,
+            phase: 'dealer-revealing',
+            playerChips: chips,
+            message: 'Dealer has Blackjack! Insurance pays. Main bet pushes.',
+            animationLock: true,
+          }
+        }
         return {
           ...state,
-          playerHand: newHand,
+          phase: 'dealer-revealing',
+          playerChips: chips,
+          message: state.insuranceBet > 0
+            ? 'Dealer has Blackjack! Insurance pays.'
+            : 'Dealer has Blackjack!',
+          animationLock: true,
+        }
+      }
+
+      // Dealer does NOT have blackjack — insurance bet lost
+      if (playerHasBlackjack) {
+        return {
+          ...state,
+          phase: 'dealer-revealing',
+          message: 'Blackjack!',
+          insuranceBet: 0,
+          animationLock: true,
+        }
+      }
+      return {
+        ...state,
+        phase: 'player-turn',
+        message: 'Your turn!',
+        insuranceBet: 0,
+        animationLock: false,
+      }
+    }
+
+    case 'HIT': {
+      const hi = state.activeHandIndex
+      const hand = state.hands[hi]
+      const newCards = [...hand.cards, action.card]
+      const value = calculateHandValue(newCards)
+      const deck = state.deck.slice(1)
+      const newHands = [...state.hands]
+      newHands[hi] = { ...hand, cards: newCards }
+
+      if (value > 21) {
+        newHands[hi] = { ...newHands[hi], result: 'busted' }
+
+        // If more split hands to play, switch to next
+        if (hi < state.hands.length - 1) {
+          return {
+            ...state,
+            hands: newHands,
+            deck,
+            activeHandIndex: hi + 1,
+            phase: 'switching-hand',
+            message: `Hand ${hi + 1} busted! Playing hand ${hi + 2}...`,
+            animationLock: true,
+          }
+        }
+
+        return {
+          ...state,
+          hands: newHands,
           deck,
           phase: 'player-busted',
           message: 'Busted!',
@@ -145,19 +251,200 @@ export function gameReducer(
 
       return {
         ...state,
-        playerHand: newHand,
+        hands: newHands,
         deck,
         animationLock: true,
       }
     }
 
-    case 'STAND':
+    case 'STAND': {
+      const hi = state.activeHandIndex
+      const newHands = [...state.hands]
+      newHands[hi] = { ...newHands[hi], result: 'stood' }
+
+      // If more split hands to play, switch to next
+      if (hi < state.hands.length - 1) {
+        return {
+          ...state,
+          hands: newHands,
+          activeHandIndex: hi + 1,
+          phase: 'switching-hand',
+          message: `Hand ${hi + 1} stands. Playing hand ${hi + 2}...`,
+          animationLock: true,
+        }
+      }
+
       return {
         ...state,
+        hands: newHands,
         phase: 'dealer-revealing',
         message: "Dealer's turn...",
         animationLock: true,
       }
+    }
+
+    case 'DOUBLE_DOWN': {
+      const hi = state.activeHandIndex
+      const hand = state.hands[hi]
+      if (hand.cards.length !== 2) return state
+      if (state.playerChips < hand.bet) return state
+
+      const newCards = [...hand.cards, action.card]
+      const value = calculateHandValue(newCards)
+      const deck = state.deck.slice(1)
+      const newHands = [...state.hands]
+      newHands[hi] = {
+        ...hand,
+        cards: newCards,
+        bet: hand.bet * 2,
+        isDoubled: true,
+      }
+
+      const newChips = state.playerChips - hand.bet
+
+      if (value > 21) {
+        newHands[hi] = { ...newHands[hi], result: 'busted' }
+
+        if (hi < state.hands.length - 1) {
+          return {
+            ...state,
+            hands: newHands,
+            deck,
+            playerChips: newChips,
+            activeHandIndex: hi + 1,
+            phase: 'switching-hand',
+            message: `Hand ${hi + 1} busted after double! Playing hand ${hi + 2}...`,
+            animationLock: true,
+          }
+        }
+
+        return {
+          ...state,
+          hands: newHands,
+          deck,
+          playerChips: newChips,
+          phase: 'player-busted',
+          message: 'Busted!',
+          animationLock: true,
+        }
+      }
+
+      newHands[hi] = { ...newHands[hi], result: 'stood' }
+
+      if (hi < state.hands.length - 1) {
+        return {
+          ...state,
+          hands: newHands,
+          deck,
+          playerChips: newChips,
+          activeHandIndex: hi + 1,
+          phase: 'switching-hand',
+          message: `Doubled! Playing hand ${hi + 2}...`,
+          animationLock: true,
+        }
+      }
+
+      return {
+        ...state,
+        hands: newHands,
+        deck,
+        playerChips: newChips,
+        phase: 'dealer-revealing',
+        message: "Doubled! Dealer's turn...",
+        animationLock: true,
+      }
+    }
+
+    case 'SPLIT': {
+      const hi = state.activeHandIndex
+      const hand = state.hands[hi]
+      if (hand.cards.length !== 2) return state
+      if (hand.cards[0].rank !== hand.cards[1].rank) return state
+      if (state.playerChips < hand.bet) return state
+
+      const hand1: Hand = {
+        cards: [hand.cards[0]],
+        bet: hand.bet,
+        result: 'pending',
+        isDoubled: false,
+      }
+      const hand2: Hand = {
+        cards: [hand.cards[1]],
+        bet: hand.bet,
+        result: 'pending',
+        isDoubled: false,
+      }
+
+      const newHands = [...state.hands]
+      newHands.splice(hi, 1, hand1, hand2)
+
+      return {
+        ...state,
+        hands: newHands,
+        playerChips: state.playerChips - hand.bet,
+        animationLock: true,
+        message: 'Split! Playing hand 1...',
+      }
+    }
+
+    case 'DEAL_CARD_TO_HAND': {
+      const newHands = [...state.hands]
+      const hand = newHands[action.handIndex]
+      const newCards = [...hand.cards, action.card]
+      newHands[action.handIndex] = { ...hand, cards: newCards }
+
+      // Auto-stand split aces after receiving second card
+      const isSplitAces = hand.cards.length === 1 && hand.cards[0].rank === 'A'
+      if (isSplitAces) {
+        newHands[action.handIndex] = { ...newHands[action.handIndex], result: 'stood' }
+
+        // If all hands are done (both split aces dealt), go to dealer
+        const allDone = newHands.every((h) => h.result !== 'pending')
+        if (allDone) {
+          return {
+            ...state,
+            hands: newHands,
+            deck: state.deck.slice(1),
+            phase: 'dealer-revealing',
+            message: "Dealer's turn...",
+            animationLock: true,
+          }
+        }
+      }
+
+      // If switching hands and card gives hand 2+ cards, transition to player-turn
+      if (state.phase === 'switching-hand' && newCards.length >= 2 && !isSplitAces) {
+        return {
+          ...state,
+          hands: newHands,
+          deck: state.deck.slice(1),
+          phase: 'player-turn',
+          message: `Playing hand ${action.handIndex + 1}. Your turn!`,
+          animationLock: false,
+        }
+      }
+
+      return {
+        ...state,
+        hands: newHands,
+        deck: state.deck.slice(1),
+      }
+    }
+
+    case 'SURRENDER': {
+      if (state.hands.length !== 1) return state
+      const hand = state.hands[0]
+      if (hand.cards.length !== 2) return state
+
+      const newHands = [{ ...hand, result: 'surrendered' as const }]
+      return {
+        ...state,
+        hands: newHands,
+        phase: 'resolving',
+        message: 'Surrendered.',
+        animationLock: true,
+      }
+    }
 
     case 'REVEAL_DEALER_HOLE_CARD':
       return {
@@ -183,42 +470,56 @@ export function gameReducer(
       }
 
     case 'RESOLVE_HAND': {
-      const playerValue = calculateHandValue(state.playerHand)
       const dealerValue = calculateHandValue(state.dealerHand)
-      const isPlayerNatural =
-        state.playerHand.length === 2 && playerValue === 21
-      const isDealerNatural =
-        state.dealerHand.length === 2 && dealerValue === 21
-
-      let msg = ''
       let chips = state.playerChips
       let wins = state.wins
       let losses = state.losses
+      const messages: string[] = []
+      const multiHand = state.hands.length > 1
 
-      if (playerValue > 21) {
-        msg = 'You busted! Dealer wins.'
-        losses++
-      } else if (isPlayerNatural && isDealerNatural) {
-        msg = 'Both have Blackjack! Push.'
-        chips += state.currentBet
-      } else if (isPlayerNatural) {
-        msg = 'Blackjack! You win!'
-        chips += Math.floor(state.currentBet * 2.5) // 3:2 payout
-        wins++
-      } else if (dealerValue > 21) {
-        msg = 'Dealer busted! You win!'
-        chips += state.currentBet * 2
-        wins++
-      } else if (playerValue > dealerValue) {
-        msg = 'You win!'
-        chips += state.currentBet * 2
-        wins++
-      } else if (playerValue < dealerValue) {
-        msg = 'Dealer wins.'
-        losses++
-      } else {
-        msg = 'Push! Bet returned.'
-        chips += state.currentBet
+      for (let i = 0; i < state.hands.length; i++) {
+        const hand = state.hands[i]
+        const playerValue = calculateHandValue(hand.cards)
+        const prefix = multiHand ? `Hand ${i + 1}: ` : ''
+
+        if (hand.result === 'surrendered') {
+          chips += Math.floor(hand.bet / 2)
+          losses++
+          messages.push(`${prefix}Surrendered.`)
+          continue
+        }
+
+        if (playerValue > 21) {
+          losses++
+          messages.push(`${prefix}Busted.`)
+          continue
+        }
+
+        const isPlayerNatural = hand.cards.length === 2 && playerValue === 21 && !multiHand
+        const isDealerNatural = state.dealerHand.length === 2 && dealerValue === 21
+
+        if (isPlayerNatural && isDealerNatural) {
+          chips += hand.bet
+          messages.push(`${prefix}Both Blackjack! Push.`)
+        } else if (isPlayerNatural) {
+          chips += Math.floor(hand.bet * 2.5) // 3:2 payout
+          wins++
+          messages.push(`${prefix}Blackjack!`)
+        } else if (dealerValue > 21) {
+          chips += hand.bet * 2
+          wins++
+          messages.push(`${prefix}Dealer busted!`)
+        } else if (playerValue > dealerValue) {
+          chips += hand.bet * 2
+          wins++
+          messages.push(`${prefix}Win!`)
+        } else if (playerValue < dealerValue) {
+          losses++
+          messages.push(`${prefix}Dealer wins.`)
+        } else {
+          chips += hand.bet
+          messages.push(`${prefix}Push.`)
+        }
       }
 
       return {
@@ -227,7 +528,7 @@ export function gameReducer(
         playerChips: chips,
         wins,
         losses,
-        message: msg,
+        message: messages.join(' '),
         animationLock: false,
         showResetDropdown: chips <= 0,
       }
@@ -238,7 +539,9 @@ export function gameReducer(
         ...state,
         phase: 'betting',
         betAmount: 0,
-        currentBet: 0,
+        hands: [],
+        activeHandIndex: 0,
+        insuranceBet: 0,
       }
 
     case 'SET_ANIMATION_LOCK':

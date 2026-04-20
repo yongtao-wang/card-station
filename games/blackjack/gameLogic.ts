@@ -53,13 +53,49 @@ function upcardValue(upcard?: Card): number {
   return getCardValue(upcard)
 }
 
+export type StrategyDecision = 'hit' | 'stand' | 'double' | 'split' | 'surrender'
+
 export function basicStrategyDecision(
   playerHand: Card[],
-  dealerUpcard?: Card
-): 'hit' | 'stand' {
+  dealerUpcard?: Card,
+  canSplit?: boolean,
+  canDouble?: boolean,
+  canSurrender?: boolean
+): StrategyDecision {
   const total = calculateHandValue(playerHand)
   const soft = isSoft(playerHand)
   const d = upcardValue(dealerUpcard)
+  const isFirstAction = playerHand.length === 2
+
+  // Split logic
+  if (isFirstAction && canSplit && playerHand[0].rank === playerHand[1].rank) {
+    const r = playerHand[0].rank
+    if (r === 'A' || r === '8') return 'split'
+    if (r === '2' || r === '3') { if (d >= 2 && d <= 7) return 'split' }
+    if (r === '4') { if (d === 5 || d === 6) return 'split' }
+    if (r === '6') { if (d >= 2 && d <= 6) return 'split' }
+    if (r === '7') { if (d >= 2 && d <= 7) return 'split' }
+    if (r === '9') { if ((d >= 2 && d <= 6) || d === 8 || d === 9) return 'split' }
+    // Never split 5s or 10s
+  }
+
+  // Surrender logic (late surrender)
+  if (isFirstAction && canSurrender) {
+    if (total === 16 && (d === 9 || d === 10 || d === 11)) return 'surrender'
+    if (total === 15 && d === 10) return 'surrender'
+  }
+
+  // Double logic
+  if (isFirstAction && canDouble) {
+    if (!soft) {
+      if (total === 11) return 'double'
+      if (total === 10 && d >= 2 && d <= 9) return 'double'
+      if (total === 9 && d >= 3 && d <= 6) return 'double'
+    } else {
+      if (total >= 13 && total <= 17 && (d === 5 || d === 6)) return 'double'
+      if (total === 18 && d >= 3 && d <= 6) return 'double'
+    }
+  }
 
   if (!soft) {
     if (total >= 17) return 'stand'

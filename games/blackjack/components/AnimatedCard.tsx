@@ -10,7 +10,6 @@ interface AnimatedCardProps {
   idx: number
   cardOffset: string
   flyFrom?: { x: number; y: number }
-  isLatest: boolean
   onAnimationComplete?: () => void
 }
 
@@ -19,7 +18,6 @@ export const AnimatedCard = memo(function AnimatedCard({
   idx,
   cardOffset,
   flyFrom,
-  isLatest,
   onAnimationComplete,
 }: AnimatedCardProps) {
   const targetRotation = card.faceDown ? 0 : 180
@@ -46,9 +44,7 @@ export const AnimatedCard = memo(function AnimatedCard({
         mass: 1,
       }}
       onAnimationComplete={() => {
-        if (isLatest && onAnimationComplete) {
-          onAnimationComplete()
-        }
+        onAnimationComplete?.()
       }}
     >
       <motion.div
@@ -69,6 +65,7 @@ export const AnimatedCard = memo(function AnimatedCard({
             alt='Card back'
             fill
             sizes='100vw'
+            className={styles.cardImage}
             style={{ objectFit: 'cover' }}
             priority
           />
@@ -83,6 +80,7 @@ export const AnimatedCard = memo(function AnimatedCard({
             alt={`${card.rank} of ${card.suit}`}
             fill
             sizes='100vw'
+            className={styles.cardImage}
             style={{ objectFit: 'cover' }}
             priority
           />

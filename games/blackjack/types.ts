@@ -30,6 +30,15 @@ export interface Card {
   faceDown?: boolean
 }
 
+export type HandResult = 'pending' | 'busted' | 'stood' | 'blackjack' | 'surrendered'
+
+export interface Hand {
+  cards: Card[]
+  bet: number
+  result: HandResult
+  isDoubled: boolean
+}
+
 export type GamePhase =
   | 'betting'
   | 'dealing'
@@ -39,15 +48,18 @@ export type GamePhase =
   | 'dealer-hitting'
   | 'resolving'
   | 'result'
+  | 'insurance-prompt'
+  | 'switching-hand'
 
 export interface BlackjackState {
   phase: GamePhase
   deck: Card[]
-  playerHand: Card[]
+  hands: Hand[]
+  activeHandIndex: number
   dealerHand: Card[]
   playerChips: number
-  currentBet: number
   betAmount: number
+  insuranceBet: number
   wins: number
   losses: number
   message: string
@@ -67,6 +79,13 @@ export type GameAction =
   | { type: 'DEALING_COMPLETE' }
   | { type: 'HIT'; card: Card }
   | { type: 'STAND' }
+  | { type: 'DOUBLE_DOWN'; card: Card }
+  | { type: 'SPLIT' }
+  | { type: 'DEAL_CARD_TO_HAND'; handIndex: number; card: Card }
+  | { type: 'SURRENDER' }
+  | { type: 'TAKE_INSURANCE' }
+  | { type: 'DECLINE_INSURANCE' }
+  | { type: 'RESOLVE_INSURANCE' }
   | { type: 'REVEAL_DEALER_HOLE_CARD' }
   | { type: 'DEALER_HIT'; card: Card }
   | { type: 'DEALER_STAND' }

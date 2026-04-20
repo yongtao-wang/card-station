@@ -35,6 +35,10 @@
   -webkit-backface-visibility: hidden;
 }
 
+.cardImage {
+  border-radius: inherit;
+}
+
 .gameTitle {
   @apply text-2xl sm:text-3xl font-bold text-white text-center p-4 sm:p-8
 }
@@ -42,16 +46,19 @@
 /* Player hand area */
 .playerHand {
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
   min-height: 100px;
   justify-content: center;
   max-width: 100%;
+  overflow: visible;
 }
 
 @media (min-width: 640px) {
   .playerHand {
-    gap: 8px;
     min-height: 150px;
   }
 }
@@ -59,18 +66,26 @@
 /* Dealer hand area */
 .dealerHand {
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
   min-height: 100px;
   justify-content: center;
   max-width: 100%;
+  overflow: visible;
 }
 
 @media (min-width: 640px) {
   .dealerHand {
-    gap: 8px;
     min-height: 150px;
   }
+}
+
+.playerHand > *,
+.dealerHand > * {
+  flex: 0 0 auto;
 }
 
 /* Reset Chips Dropdown */
@@ -183,12 +198,18 @@
 
 /* Hand section styling */
 .handSection {
-  width: 90%;
+  width: 100%;
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 @media (min-width: 768px) {
   .handSection {
-    width: 60%;
+    max-width: 860px;
   }
 }
 
@@ -198,6 +219,20 @@
   color: white;
   margin-bottom: 0.5rem;
   text-align: center;
+  /* Keep board height stable: reserve up to 2 lines */
+  line-height: 1.25;
+  min-height: calc(2 * 1.25em);
+  width: 100%;
+  max-width: 100%;
+
+  /* Clamp to 2 lines (prevents layout jump while allowing wrap) */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: none;
 }
 
 .button {
@@ -210,6 +245,7 @@
   transition: all 0.2s ease;
   touch-action: manipulation;
   height: 48px;
+  white-space: nowrap;
 }
 
 @media (min-width: 640px) {
@@ -339,6 +375,91 @@
   font-weight: 700;
   color: white;
   margin: 0 0.5rem;
+}
+
+/* Double Down button */
+.doubleButton {
+  background-color: #f97316;
+}
+
+.doubleButton:hover:not(:disabled) {
+  background-color: #ea580c;
+}
+
+/* Split button */
+.splitButton {
+  background-color: #06b6d4;
+}
+
+.splitButton:hover:not(:disabled) {
+  background-color: #0891b2;
+}
+
+/* Surrender button */
+.surrenderButton {
+  background-color: #ef4444;
+}
+
+.surrenderButton:hover:not(:disabled) {
+  background-color: #dc2626;
+}
+
+/* Insurance button */
+.insuranceButton {
+  background-color: #8b5cf6;
+}
+
+.insuranceButton:hover:not(:disabled) {
+  background-color: #7c3aed;
+}
+
+/* Decline insurance button */
+.declineButton {
+  background-color: #6b7280;
+}
+
+.declineButton:hover:not(:disabled) {
+  background-color: #4b5563;
+}
+
+/* Multi-hand container for split */
+.playerHandsContainer {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .playerHandsContainer {
+    gap: 16px;
+  }
+}
+
+.activeHand {
+  border: 2px solid #fbbf24;
+  border-radius: 8px;
+  padding: 4px;
+}
+
+@media (min-width: 640px) {
+  .activeHand {
+    padding: 8px;
+  }
+}
+
+.inactiveHand {
+  opacity: 0.6;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  padding: 4px;
+}
+
+@media (min-width: 640px) {
+  .inactiveHand {
+    padding: 8px;
+  }
 }
 
 .howToPlay {
