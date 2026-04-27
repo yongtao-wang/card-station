@@ -4,6 +4,7 @@ import Header from '@/components/Header'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import type { Metadata } from 'next'
+import Script from 'next/script'
 import { site } from '@/lib/site'
 import { games, type GameMeta } from '@/games/index'
 import { PageTracker } from '@/components/PageTracker'
@@ -90,6 +91,11 @@ export default function RootLayout({
         <Analytics />
         <SpeedInsights />
         <PageTracker />
+        <Script
+          src='https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8884012279768444'
+          strategy='afterInteractive'
+          crossOrigin='anonymous'
+        />
         {/* Global structured data for the site & games */}
         <script
           type='application/ld+json'
