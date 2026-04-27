@@ -58,6 +58,9 @@ export const metadata: Metadata = {
     title: 'Card Station — Free Online Card Games',
     description: 'Quick, fun & free mini card games you can play instantly.',
   },
+  other: {
+    'google-adsense-account': 'ca-pub-8884012279768444',
+  },
 }
 
 export default function RootLayout({
