@@ -1,6 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import type { CSSProperties } from 'react'
 
 import Image from 'next/image'
 import { motion } from 'motion/react'
@@ -30,6 +31,12 @@ interface Card {
 
 type GamePhase = 'preflop' | 'flop' | 'turn' | 'river' | 'showdown' | 'gameOver'
 type PlayerAction = 'fold' | 'call' | 'raise' | 'check' | 'allIn'
+
+type LogAuthor = 'you' | 'mav' | null
+interface LogEntry {
+  author: LogAuthor
+  text: string
+}
 
 interface Player {
   id: string
@@ -259,6 +266,28 @@ const getBestHand = (
   return bestHand || { rank: -1, description: '', values: [] }
 }
 
+// Best made hand for the "YOUR HAND" indicator. Works with 2 hole cards
+// (preflop) by detecting a pocket pair, otherwise delegates to getBestHand.
+const getCurrentBestHand = (
+  holeCards: Card[],
+  communityCards: Card[]
+): { description: string; rank: number } | null => {
+  if (holeCards.length === 0) return null
+  if (holeCards.length + communityCards.length >= 5) {
+    const best = getBestHand(holeCards, communityCards)
+    return { description: best.description, rank: best.rank }
+  }
+  const counts: { [value: number]: number } = {}
+  ;[...holeCards, ...communityCards].forEach((c) => {
+    const v = getCardValue(c.rank)
+    counts[v] = (counts[v] || 0) + 1
+  })
+  const hasPair = Object.values(counts).some((n) => n >= 2)
+  return hasPair
+    ? { description: 'Pair', rank: 1 }
+    : { description: 'High Card', rank: 0 }
+}
+
 // Compare two hand values arrays for tie-breaking
 function compareHandValues(a: number[], b: number[]): number {
   for (let i = 0; i < Math.max(a.length, b.length); i++) {
@@ -478,7 +507,7 @@ export default function Holdem() {
       },
       {
         id: 'bot',
-        name: 'Bot',
+        name: 'Mav',
         chips: 1000,
         cards: [],
         currentBet: 0,
@@ -498,13 +527,20 @@ export default function Holdem() {
   const [deck, setDeck] = useState<Card[]>([])
   const [gameMessage, setGameMessage] = useState<string>('')
   const [isAnimatingOut, setIsAnimatingOut] = useState(false)
+  const [handLog, setHandLog] = useState<LogEntry[]>([])
+  const [handNumber, setHandNumber] = useState(0)
+  const [isRaiseOpen, setIsRaiseOpen] = useState(false)
+  const [raiseAmount, setRaiseAmount] = useState(0)
+  const [activePreset, setActivePreset] = useState<string | null>(null)
+  const logListRef = useRef<HTMLDivElement>(null)
+
+  const pushLog = useCallback((entry: LogEntry) => {
+    setHandLog((prev) => [...prev, entry].slice(-30))
+  }, [])
 
   const player = gameState.players.find((p) => p.id === 'player')!
   const bot = gameState.players.find((p) => p.id === 'bot')!
-  const opponent = gameState.players.find(
-    (p) => p.id !== gameState.currentPlayer
-  )!
-  const callAmount = Math.max(0, opponent.currentBet - player.currentBet)
+  const playerCallAmount = Math.max(0, bot.currentBet - player.currentBet)
 
   // Load chips from local storage
   useEffect(() => {
@@ -561,7 +597,7 @@ export default function Holdem() {
         },
         {
           id: 'bot',
-          name: 'Bot',
+          name: 'Mav',
           chips:
             gameState.players[1].chips > 0 ? gameState.players[1].chips : 1000,
           cards: [],
@@ -622,6 +658,29 @@ export default function Holdem() {
 
         setDeck(newDeck.slice(4))
         setGameMessage('New hand started! Place your bets.')
+
+        const nextHand = handNumber + 1
+        setHandNumber(nextHand)
+        const dealerId = gameState.dealer
+        const authorOf = (id: string): LogAuthor =>
+          id === 'player' ? 'you' : 'mav'
+        setHandLog([
+          {
+            author: null,
+            text: `Hand #${nextHand} — ${
+              dealerId === 'player' ? 'You' : 'Mav'
+            } on the button`,
+          },
+          {
+            author: authorOf(smallBlindPlayer.id),
+            text: `posts small blind $${gameState.smallBlind}`,
+          },
+          {
+            author: authorOf(bigBlindPlayer.id),
+            text: `posts big blind $${gameState.bigBlind}`,
+          },
+        ])
+        setIsRaiseOpen(false)
       }, 100) // Small delay to ensure proper card flip animation
     }, 600) // Wait for fly-out animation to complete
   }
@@ -663,6 +722,8 @@ export default function Holdem() {
           (p) => p.id === newState.currentPlayer
         )!
         const opponent = players.find((p) => p.id !== newState.currentPlayer)!
+        const author: LogAuthor =
+          currentPlayerObj.id === 'player' ? 'you' : 'mav'
 
         let actionMsg = ''
         switch (action) {
@@ -688,6 +749,11 @@ export default function Holdem() {
               )
             }
             actionMsg = `${currentPlayerObj.name} folded. ${opponent.name} wins!`
+            pushLog({ author, text: 'folds' })
+            pushLog({
+              author: null,
+              text: opponent.id === 'player' ? 'You win' : 'Mav wins',
+            })
             break
 
           case 'call': {
@@ -701,6 +767,7 @@ export default function Holdem() {
             newState.pot += callAmount
             if (currentPlayerObj.chips === 0) currentPlayerObj.isAllIn = true
             actionMsg = `${currentPlayerObj.name} called for $${callAmount}.`
+            pushLog({ author, text: `calls $${callAmount}` })
             break
           }
 
@@ -712,12 +779,17 @@ export default function Holdem() {
               newState.pot += raiseAmount
               if (currentPlayerObj.chips === 0) currentPlayerObj.isAllIn = true
               actionMsg = `${currentPlayerObj.name} raised to $${raiseAmount}.`
+              pushLog({
+                author,
+                text: `raises to $${currentPlayerObj.currentBet}`,
+              })
             }
             break
           }
 
           case 'check':
             actionMsg = `${currentPlayerObj.name} checked.`
+            pushLog({ author, text: 'checks' })
             break
 
           case 'allIn':
@@ -726,6 +798,10 @@ export default function Holdem() {
             currentPlayerObj.chips = 0
             currentPlayerObj.isAllIn = true
             actionMsg = `${currentPlayerObj.name} went all in!`
+            pushLog({
+              author,
+              text: `all-in $${currentPlayerObj.currentBet}`,
+            })
             break
         }
 
@@ -757,6 +833,7 @@ export default function Holdem() {
             )
             newState.communityCards = newCommunityCards
             setDeck(remainingDeck)
+            pushLog({ author: null, text: 'Flop' })
           } else if (newState.phase === 'flop') {
             newState.phase = 'turn'
             const { newCommunityCards, remainingDeck } = dealCommunityCards(
@@ -766,6 +843,7 @@ export default function Holdem() {
             )
             newState.communityCards = newCommunityCards
             setDeck(remainingDeck)
+            pushLog({ author: null, text: 'Turn' })
           } else if (newState.phase === 'turn') {
             newState.phase = 'river'
             const { newCommunityCards, remainingDeck } = dealCommunityCards(
@@ -775,6 +853,7 @@ export default function Holdem() {
             )
             newState.communityCards = newCommunityCards
             setDeck(remainingDeck)
+            pushLog({ author: null, text: 'River' })
           } else if (newState.phase === 'river') {
             newState.phase = 'showdown'
 
@@ -846,6 +925,16 @@ export default function Holdem() {
                       ?.name + ' wins'
               } with ${newState.winningHand}!`
             )
+
+            pushLog({
+              author: null,
+              text:
+                winnerId === 'tie'
+                  ? `Tie — ${winningHandDesc}`
+                  : `${
+                      winnerId === 'player' ? 'You win' : 'Mav wins'
+                    } — ${winningHandDesc}`,
+            })
           }
 
           newState.currentPlayer =
@@ -862,8 +951,26 @@ export default function Holdem() {
         return newState
       })
     },
-    [dealCommunityCards, deck]
+    [dealCommunityCards, deck, pushLog]
   )
+
+  // Close the raise sheet whenever it stops being the human's turn
+  useEffect(() => {
+    if (
+      gameState.currentPlayer !== 'player' ||
+      gameState.phase === 'showdown' ||
+      gameState.phase === 'gameOver'
+    ) {
+      setIsRaiseOpen(false)
+    }
+  }, [gameState.currentPlayer, gameState.phase])
+
+  // Keep the hand log scrolled to the newest entry
+  useEffect(() => {
+    if (logListRef.current) {
+      logListRef.current.scrollTop = logListRef.current.scrollHeight
+    }
+  }, [handLog])
 
   // Bot action effect
   useEffect(() => {
@@ -892,6 +999,147 @@ export default function Holdem() {
     initGame()
   }, [])
 
+  const isPlaying =
+    gameState.phase !== 'gameOver' && gameState.phase !== 'showdown'
+  const isMyTurn = gameState.currentPlayer === 'player'
+  const cardsRevealed =
+    gameState.phase === 'showdown' || gameState.phase === 'gameOver'
+
+  const yourHand =
+    player.cards.length === 2 && !isAnimatingOut
+      ? getCurrentBestHand(player.cards, gameState.communityCards)
+      : null
+
+  const bigBlind = gameState.bigBlind
+  const minRaiseTo = player.currentBet + playerCallAmount + gameState.minRaise
+  const maxRaiseTo = player.currentBet + player.chips
+  const canFullRaise =
+    isMyTurn && player.chips > 0 && maxRaiseTo >= minRaiseTo
+  const canAllInOnly =
+    isMyTurn && player.chips > 0 && maxRaiseTo < minRaiseTo
+
+  const snapRaise = (value: number) => {
+    const stepped = Math.round(value / bigBlind) * bigBlind
+    return Math.min(maxRaiseTo, Math.max(minRaiseTo, stepped))
+  }
+  const potAfterCall = gameState.pot + playerCallAmount
+  const presetValues: Record<string, number> = {
+    min: minRaiseTo,
+    half: snapRaise(player.currentBet + playerCallAmount + potAfterCall * 0.5),
+    pot: snapRaise(player.currentBet + playerCallAmount + potAfterCall),
+    max: maxRaiseTo,
+  }
+
+  const phaseLabel = (() => {
+    switch (gameState.phase) {
+      case 'preflop':
+        return 'PRE-FLOP'
+      case 'flop':
+        return 'FLOP'
+      case 'turn':
+        return 'TURN'
+      case 'river':
+        return 'RIVER'
+      case 'showdown':
+        return 'SHOWDOWN'
+      default:
+        return 'HAND OVER'
+    }
+  })()
+
+  const openRaise = () => {
+    setRaiseAmount(minRaiseTo)
+    setActivePreset('min')
+    setIsRaiseOpen(true)
+  }
+  const toggleRaise = () => (isRaiseOpen ? setIsRaiseOpen(false) : openRaise())
+  const selectPreset = (key: string) => {
+    setRaiseAmount(presetValues[key])
+    setActivePreset(key)
+  }
+  const onSlider = (value: number) => {
+    setRaiseAmount(value)
+    setActivePreset(null)
+  }
+  const confirmRaise = () => {
+    const target = raiseAmount
+    setIsRaiseOpen(false)
+    if (target >= maxRaiseTo) {
+      playerAction('allIn')
+    } else {
+      playerAction('raise', target - player.currentBet)
+    }
+  }
+  const doFold = () => {
+    setIsRaiseOpen(false)
+    playerAction('fold')
+  }
+  const doCheck = () => {
+    setIsRaiseOpen(false)
+    playerAction('check')
+  }
+  const doCall = () => {
+    setIsRaiseOpen(false)
+    playerAction('call')
+  }
+  const doAllIn = () => {
+    setIsRaiseOpen(false)
+    playerAction('allIn')
+  }
+
+  const renderHoleCard = (card: Card, index: number, faceDown: boolean) => {
+    if (faceDown) {
+      return (
+        <div
+          key={index}
+          style={{ '--i': index } as CSSProperties}
+          className={`${styles.holeCard} ${
+            cardsRevealed ? styles.flipped : ''
+          } ${isAnimatingOut ? styles.flyOut : ''}`}
+        >
+          <div className={styles.cardInner}>
+            <div className={styles.cardFront}>
+              <Image
+                src='/assets/img/cards/card_back.jpg'
+                alt='Card Back'
+                fill
+                sizes='120px'
+                style={{ objectFit: 'cover' }}
+                priority
+              />
+            </div>
+            <div className={styles.cardBack}>
+              <Image
+                src={getCardSvgPath(card)}
+                alt={`${card.rank} of ${card.suit}`}
+                fill
+                sizes='120px'
+                style={{ objectFit: 'cover' }}
+                priority
+              />
+            </div>
+          </div>
+        </div>
+      )
+    }
+    return (
+      <div
+        key={index}
+        style={{ '--i': index } as CSSProperties}
+        className={`${styles.holeCard} ${isAnimatingOut ? styles.flyOut : ''}`}
+      >
+        <Image
+          src={getCardSvgPath(card)}
+          alt={`${card.rank} of ${card.suit}`}
+          fill
+          sizes='120px'
+          style={{ objectFit: 'cover' }}
+          priority
+        />
+      </div>
+    )
+  }
+
   return (
     <div className='sm:p-4'>
       <motion.div
@@ -903,198 +1151,289 @@ export default function Holdem() {
         <h1 className='text-2xl sm:text-3xl font-bold text-white text-center p-4 sm:p-8'>
           Texas Hold&apos;em
         </h1>
-        {/* Community Cards */}
-        <div className='text-center mb-6'>
-          <h3 className='text-white text-lg mb-2'>Community Cards</h3>
-          <div className='flex flex-wrap justify-center gap-2'>
-            {gameState.communityCards.map((card, index) => (
-              <div
-                key={index}
-                className={`${styles.card} rounded-lg shadow-lg overflow-hidden flex-shrink-0`}
-              >
-                <Image
-                  src={getCardSvgPath(card)}
-                  alt={`${card.rank} of ${card.suit}`}
-                  fill
-                  sizes='100vw'
-                  style={{ objectFit: 'cover' }}
-                  priority
+        <div className={styles.stage}>
+          {/* Hand log (desktop only) */}
+          <div className={`${styles.panel} ${styles.handLog}`}>
+            <div className={styles.handLogHeader}>
+              <span>HAND LOG</span>
+              <span>#{handNumber}</span>
+            </div>
+            <div className={styles.handLogList} ref={logListRef}>
+              {handLog.map((entry, i) => (
+                <div key={i} className={styles.logEntry}>
+                  {entry.author && (
+                    <span
+                      className={
+                        entry.author === 'you' ? styles.tagYou : styles.tagMav
+                      }
+                    >
+                      {entry.author === 'you' ? 'You' : 'Mav'}
+                    </span>
+                  )}
+                  <span className={styles.logText}>{entry.text}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Your hand indicator */}
+          {yourHand && (
+            <div className={`${styles.panel} ${styles.yourHand}`}>
+              <div className={styles.yourHandLabel}>YOUR HAND</div>
+              <div className={styles.yourHandName}>{yourHand.description}</div>
+              <div className={styles.strengthTrack}>
+                <div
+                  className={styles.strengthFill}
+                  style={{ width: `${((yourHand.rank + 1) / 9) * 100}%` }}
                 />
               </div>
-            ))}
-            {[...Array(5 - gameState.communityCards.length)].map((_, index) => (
-              <div
-                key={`empty-${index}`}
-                className={`${styles.card} ${styles.empty} bg-transparent border-2 rounded-lg shadow-lg flex-shrink-0`}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Bot Player */}
-        <div className='bg-red-100 rounded-lg p-4 mb-4 text-slate-800'>
-          <div className='flex justify-between items-center '>
-            <div>
-              <h3 className='font-bold text-lg'>{bot.name}</h3>
-              <p>Chips: ${bot.chips}</p>
-              <p>Current Bet: ${bot.currentBet}</p>
             </div>
-            <div className='flex min-h-24 sm:min-h-36 space-x-2'>
-              {bot.cards.map((card, index) => (
+          )}
+
+          {/* Stadium table */}
+          <div className={styles.table}>
+            {/* Bot seat (top) */}
+            <div
+              className={`${styles.seat} ${
+                gameState.currentPlayer === 'bot' ? styles.seatActive : ''
+              }`}
+            >
+              <div className={styles.plate}>
+                <span className={styles.avatar}>🤖</span>
+                <div className={styles.plateInfo}>
+                  <span className={styles.plateName}>
+                    {bot.name}
+                    {gameState.dealer === 'bot' && (
+                      <span className={styles.dealerBtn}>D</span>
+                    )}
+                  </span>
+                  <span className={styles.plateChips}>${bot.chips}</span>
+                </div>
+              </div>
+              <div className={styles.seatCards}>
+                {bot.cards.map((card, index) =>
+                  renderHoleCard(card, index, true)
+                )}
+              </div>
+            </div>
+
+            {/* Bot bet stack */}
+            {bot.currentBet > 0 && (
+              <div className={`${styles.betStack} ${styles.betStackTop}`}>
+                <span className={styles.chip} />${bot.currentBet}
+              </div>
+            )}
+
+            {/* Center cluster */}
+            <div className={styles.center}>
+              <div className={styles.phasePill}>{phaseLabel}</div>
+              <div className={styles.community}>
+                {gameState.communityCards.map((card, index) => (
+                  <div
+                    key={index}
+                    style={{ '--i': index } as CSSProperties}
+                    className={styles.commCard}
+                  >
+                    <Image
+                      src={getCardSvgPath(card)}
+                      alt={`${card.rank} of ${card.suit}`}
+                      fill
+                      sizes='80px'
+                      style={{ objectFit: 'cover' }}
+                      priority
+                    />
+                  </div>
+                ))}
+                {[...Array(5 - gameState.communityCards.length)].map(
+                  (_, index) => (
+                    <div
+                      key={`empty-${index}`}
+                      className={`${styles.commCard} ${styles.commEmpty}`}
+                    />
+                  )
+                )}
+              </div>
+              <div className={styles.pot}>
+                <span className={styles.potLabel}>POT</span>
+                <span className={styles.potValue}>${gameState.pot}</span>
+              </div>
+            </div>
+
+            {/* Player bet stack */}
+            {player.currentBet > 0 && (
+              <div className={`${styles.betStack} ${styles.betStackBottom}`}>
+                <span className={styles.chip} />${player.currentBet}
+              </div>
+            )}
+
+            {/* Player seat (bottom) */}
+            <div
+              className={`${styles.seat} ${
+                gameState.currentPlayer === 'player' ? styles.seatActive : ''
+              }`}
+            >
+              <div className={styles.seatCards}>
+                {player.cards.map((card, index) =>
+                  renderHoleCard(card, index, false)
+                )}
+              </div>
+              <div className={styles.plate}>
+                <span className={styles.avatar}>🧑</span>
+                <div className={styles.plateInfo}>
+                  <span className={styles.plateName}>
+                    {player.name}
+                    {gameState.dealer === 'player' && (
+                      <span className={styles.dealerBtn}>D</span>
+                    )}
+                  </span>
+                  <span className={styles.plateChips}>${player.chips}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Dimming backdrop while the raise sheet is open */}
+          {isRaiseOpen && (
+            <div
+              className={styles.sheetBackdrop}
+              onClick={() => setIsRaiseOpen(false)}
+            />
+          )}
+
+          {/* Action dock */}
+          <div className={styles.dock}>
+            {isPlaying ? (
+              <>
+                <div className={styles.actionRow}>
+                  <button
+                    onClick={doFold}
+                    disabled={!isMyTurn}
+                    className={`${styles.actBtn} ${styles.foldBtn}`}
+                  >
+                    Fold
+                  </button>
+
+                  {playerCallAmount === 0 ? (
+                    <button
+                      onClick={doCheck}
+                      disabled={!isMyTurn}
+                      className={`${styles.actBtn} ${styles.callBtn}`}
+                    >
+                      Check
+                    </button>
+                  ) : (
+                    <button
+                      onClick={doCall}
+                      disabled={!isMyTurn || player.chips < playerCallAmount}
+                      className={`${styles.actBtn} ${styles.callBtn}`}
+                    >
+                      Call
+                      <span className={styles.hint}>
+                        ${Math.min(playerCallAmount, player.chips)}
+                      </span>
+                    </button>
+                  )}
+
+                  {canAllInOnly ? (
+                    <button
+                      onClick={doAllIn}
+                      disabled={!isMyTurn}
+                      className={`${styles.actBtn} ${styles.raiseBtn}`}
+                    >
+                      All In
+                      <span className={styles.hint}>${player.chips}</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={toggleRaise}
+                      disabled={!canFullRaise}
+                      className={`${styles.actBtn} ${styles.raiseBtn} ${
+                        isRaiseOpen ? styles.raiseBtnActive : ''
+                      }`}
+                    >
+                      Raise
+                      <span
+                        className={`${styles.caret} ${
+                          isRaiseOpen ? styles.caretOpen : ''
+                        }`}
+                      >
+                        ▾
+                      </span>
+                    </button>
+                  )}
+                </div>
+
                 <div
-                  key={index}
-                  className={`${styles.card} overflow-hidden bg-transparent ${
-                    gameState.phase === 'gameOver' ||
-                    gameState.phase === 'showdown'
-                      ? styles.flipped
-                      : ''
-                  } ${isAnimatingOut ? styles.flyOut : ''}`}
+                  className={`${styles.raiseSheet} ${
+                    isRaiseOpen ? styles.raiseSheetOpen : ''
+                  }`}
                 >
-                  <div className={`${styles.cardInner}`}>
-                    <div className={styles.cardFront}>
-                      <Image
-                        className='object-cover shadow-lg'
-                        src='/assets/img/cards/card_back.jpg'
-                        alt='Card Back'
-                        fill
-                        sizes='100vw'
-                        priority
-                      />
+                  <div className={styles.sheetInner}>
+                    <button
+                      className={styles.handle}
+                      onClick={() => setIsRaiseOpen(false)}
+                      aria-label='Close raise panel'
+                    />
+                    <div className={styles.raiseToRow}>
+                      <span className={styles.raiseToLabel}>RAISE TO</span>
+                      <span className={styles.raiseToValue}>${raiseAmount}</span>
                     </div>
-                    <div className={styles.cardBack}>
-                      <Image
-                        className='object-cover shadow-lg'
-                        src={getCardSvgPath(card)}
-                        alt={`${card.rank} of ${card.suit}`}
-                        fill
-                        sizes='100vw'
-                        priority
-                      />
+                    <input
+                      type='range'
+                      className={styles.slider}
+                      min={minRaiseTo}
+                      max={maxRaiseTo}
+                      step={bigBlind}
+                      value={raiseAmount}
+                      onChange={(e) => onSlider(Number(e.target.value))}
+                    />
+                    <div className={styles.presets}>
+                      {(
+                        [
+                          ['min', 'MIN'],
+                          ['half', '½ POT'],
+                          ['pot', 'POT'],
+                          ['max', 'MAX'],
+                        ] as const
+                      ).map(([key, label]) => (
+                        <button
+                          key={key}
+                          onClick={() => selectPreset(key)}
+                          className={`${styles.preset} ${
+                            activePreset === key ? styles.presetActive : ''
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
                     </div>
+                    <button className={styles.confirm} onClick={confirmRaise}>
+                      {raiseAmount >= maxRaiseTo
+                        ? `All In $${raiseAmount}`
+                        : `Raise to $${raiseAmount}`}
+                    </button>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Player */}
-        <div className='bg-blue-100 rounded-lg p-4 mb-4 text-slate-800'>
-          <div className='flex justify-between items-center'>
-            <div>
-              <h3 className='font-bold text-lg'>{player.name}</h3>
-              <p>Chips: ${player.chips}</p>
-              <p>Current Bet: ${player.currentBet}</p>
-            </div>
-            <div className='flex min-h-24 sm:min-h-36 space-x-2'>
-              {player.cards.map((card, index) => (
-                <div
-                  key={index}
-                  className={`${styles.card} ${
-                    isAnimatingOut ? styles.flyOut : ''
-                  } shadow-lg`}
-                >
-                  <Image
-                    src={getCardSvgPath(card)}
-                    alt={`${card.rank} of ${card.suit}`}
-                    fill
-                    sizes='100vw'
-                    style={{ objectFit: 'cover' }}
-                    priority
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        {gameState.phase !== 'gameOver' && gameState.phase !== 'showdown' && (
-          <div className='flex flex-wrap gap-4 items-center justify-center'>
-            {/* First row: Fold, Check/Call */}
-            <div className='flex gap-4 w-full sm:w-auto justify-center mb-2 sm:mb-0'>
-              <button
-                onClick={() => playerAction('fold')}
-                disabled={gameState.currentPlayer !== 'player'}
-                className={`${styles.button} bg-red-500 hover:bg-red-600 disabled:bg-gray-400`}
-              >
-                Fold
-              </button>
-
-              {callAmount === 0 ? (
+              </>
+            ) : (
+              <div className={styles.endRow}>
                 <button
-                  onClick={() => playerAction('check')}
-                  disabled={gameState.currentPlayer !== 'player'}
-                  className={`${styles.button} bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-400`}
+                  onClick={initGame}
+                  className={`${styles.actBtn} ${styles.dealBtn}`}
                 >
-                  Check
+                  Deal New Hand
                 </button>
-              ) : (
                 <button
-                  onClick={() => playerAction('call')}
-                  disabled={
-                    gameState.currentPlayer !== 'player' ||
-                    player.chips < callAmount
-                  }
-                  className={`${styles.button} bg-green-500 hover:bg-green-600 disabled:bg-gray-400`}
+                  onClick={resetChips}
+                  className={`${styles.actBtn} ${styles.resetBtn}`}
                 >
-                  Call ${callAmount}
+                  Reset Chips
                 </button>
-              )}
-            </div>
-            {/* Second row: Raise, All In */}
-            <div className='flex gap-4 w-full sm:w-auto justify-center'>
-              <button
-                onClick={() =>
-                  playerAction('raise', callAmount + gameState.minRaise)
-                }
-                disabled={
-                  gameState.currentPlayer !== 'player' ||
-                  player.chips < callAmount + gameState.minRaise
-                }
-                className={`${styles.button} bg-purple-500 hover:bg-purple-600 disabled:bg-gray-400`}
-              >
-                Raise
-              </button>
-
-              <button
-                onClick={() => playerAction('allIn')}
-                disabled={
-                  gameState.currentPlayer !== 'player' || player.chips === 0
-                }
-                className={`${styles.button} bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400`}
-              >
-                All In
-              </button>
-            </div>
+              </div>
+            )}
           </div>
-        )}
 
-        {/* New Hand Button */}
-        {(gameState.phase === 'gameOver' || gameState.phase === 'showdown') && (
-          <div className='flex flex-col sm:flex-row text-center items-center justify-center gap-4'>
-            <button
-              onClick={initGame}
-              className={`${styles.buttonLarge} bg-lime-500 hover:bg-lime-600 `}
-            >
-              Deal New Hand
-            </button>
-            <button
-              onClick={resetChips}
-              className={`${styles.buttonLarge} bg-red-500 hover:bg-red-600 `}
-            >
-              Reset Chips
-            </button>
-          </div>
-        )}
-
-        {/* Game Info */}
-        <div className='bg-green-700 rounded-lg p-4 my-8 text-white text-center'>
-          {gameMessage && (
-            <p className='text-yellow-300 mt-2 text-xl'>{gameMessage}</p>
-          )}
-          <p className='text-lg font-semibold'>Pot: ${gameState.pot}</p>
-          <p className='text-sm'>Phase: {gameState.phase}</p>
+          {gameMessage && <p className={styles.message}>{gameMessage}</p>}
         </div>
       </motion.div>
       {/* Texas Hold'em Introduction & How to Play */}

@@ -7,20 +7,272 @@
   @apply w-full sm:max-w-4xl mx-auto mb-6 sm:my-10 bg-white/80 sm:rounded-lg p-4 sm:p-6 shadow-lg text-gray-900
 }
 
-.card {
-  width: 64px;
-  height: 93px;
-  border-radius: 6px;
-  position: relative;
-  border: none;
-  perspective: 1000px;
+/* ---- Stage ---- */
+.stage {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 0 12px;
+}
+
+/* ---- Glass panels (hand log + your hand) ---- */
+.panel {
+  position: absolute;
+  top: 40px;
+  z-index: 25;
+  background: rgba(6, 28, 18, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  color: #e6efe9;
+  padding: 10px 12px;
+}
+
+/* Hand log: top-left, desktop only */
+.handLog {
+  left: 8px;
+  width: 220px;
+  display: none;
 }
 
 @media (min-width: 640px) {
-  .card {
-    width: 96px;
-    height: 139px;
+  .handLog {
+    display: block;
   }
+}
+
+.handLogHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  color: #9fd8b6;
+  margin-bottom: 6px;
+}
+
+.handLogList {
+  max-height: 168px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  scrollbar-width: thin;
+}
+
+.logEntry {
+  font-size: 12.5px;
+  line-height: 1.35;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  color: #d6e4dc;
+}
+
+.tagYou,
+.tagMav {
+  font-weight: 700;
+  margin-right: 5px;
+  padding: 0 5px;
+  border-radius: 5px;
+  font-size: 11px;
+}
+
+.tagYou {
+  background: rgba(56, 189, 248, 0.22);
+  color: #7dd3fc;
+}
+
+.tagMav {
+  background: rgba(248, 113, 113, 0.22);
+  color: #fca5a5;
+}
+
+.logText {
+  color: #cfe0d6;
+}
+
+/* Your hand: top-right (desktop), bottom-right (mobile) */
+.yourHand {
+  right: 8px;
+  width: 150px;
+}
+
+.yourHandLabel {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  color: #9fd8b6;
+}
+
+.yourHandName {
+  font-size: 19px;
+  font-weight: 800;
+  color: #fff;
+  margin: 2px 0 8px;
+}
+
+.strengthTrack {
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+}
+
+.strengthFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #34d399, #fbbf24);
+  transition: width 0.4s ease;
+}
+
+@media (max-width: 639px) {
+  /* On mobile the panel becomes a slim in-flow strip placed between the
+     table and the action dock, so it never overlaps the felt or buttons. */
+  .yourHand {
+    position: static;
+    order: 2;
+    width: 100%;
+    max-width: 520px;
+    margin-top: 10px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transform: none;
+  }
+
+  .yourHandLabel {
+    flex-shrink: 0;
+  }
+
+  .yourHandName {
+    flex-shrink: 0;
+    font-size: 16px;
+    margin: 0;
+  }
+
+  .strengthTrack {
+    flex: 1;
+  }
+}
+
+/* ---- Felt table (content-driven height) ---- */
+.table {
+  position: relative;
+  width: 100%;
+  max-width: 760px;
+  margin: 4px auto 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(8px, 2.2vw, 18px);
+  padding: clamp(14px, 3vw, 28px) clamp(10px, 3vw, 24px);
+  border-radius: 28px;
+  background:
+    radial-gradient(ellipse at 50% 45%, #1c854c 0%, #11583220 60%),
+    radial-gradient(ellipse at center, #157a45 0%, #0d4d2e 78%);
+  border: 9px solid #b5894a;
+  box-shadow:
+    inset 0 0 0 3px rgba(0, 0, 0, 0.35),
+    inset 0 0 50px rgba(0, 0, 0, 0.4),
+    0 14px 34px rgba(0, 0, 0, 0.5);
+}
+
+/* ---- Seats ---- */
+.seat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  z-index: 3;
+}
+
+.seatCards {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.plate {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px 4px 4px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.seatActive .plate {
+  border-color: #fbbf24;
+  box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.4), 0 0 16px rgba(251, 191, 36, 0.35);
+}
+
+.avatar {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  font-size: 17px;
+}
+
+.plateInfo {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.plateName {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 700;
+  font-size: 13px;
+  color: #fff;
+}
+
+.plateChips {
+  font-size: 12px;
+  color: #b9e6cb;
+}
+
+.dealerBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fbbf24;
+  color: #1f2937;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+/* ---- Hole cards (with flip support for the bot) ---- */
+/* Card size is driven by viewport width with an sm breakpoint (Blackjack
+   pattern); the felt is a flex column that grows to fit, so cards never
+   overlap regardless of viewport height. */
+.holeCard {
+  position: relative;
+  flex: 0 0 auto;
+  height: clamp(96px, 24vw, 116px);
+  width: auto;
+  aspect-ratio: 2 / 3;
+  border-radius: 6px;
+  overflow: hidden;
+  perspective: 1000px;
+  animation: dealIn 0.35s ease both;
+  animation-delay: calc(var(--i, 0) * 70ms);
 }
 
 .cardInner {
@@ -31,7 +283,7 @@
   transform-style: preserve-3d;
 }
 
-.card.flipped .cardInner,
+.holeCard.flipped .cardInner,
 .flipped .cardInner {
   transform: rotateY(180deg);
 }
@@ -42,7 +294,8 @@
   width: 100%;
   height: 100%;
   backface-visibility: hidden;
-  border-radius: 8px;
+  -webkit-backface-visibility: hidden;
+  border-radius: 6px;
   overflow: hidden;
 }
 
@@ -54,13 +307,7 @@
   transform: rotateY(180deg);
 }
 
-/* Special modifiers for cards */
-.empty {
-  border: 2px dashed #ffffff40;
-  background: transparent;
-}
-
-.card.flyOut {
+.holeCard.flyOut {
   animation: flyOut 0.4s ease-in-out forwards;
 }
 
@@ -76,14 +323,385 @@
   }
 }
 
-.button {
-  @apply rounded-lg font-bold text-white px-2 py-1 sm:px-4 sm:py-2 transition shadow sm:shadow-lg touch-manipulation w-28 sm:w-32 h-12
+@keyframes dealIn {
+  from {
+    opacity: 0;
+    transform: translateY(-14px) scale(0.82);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
-.buttonLarge {
-  @apply rounded-lg font-bold text-white px-1 py-1 sm:px-2 sm:py-2 transition shadow sm:shadow-lg touch-manipulation w-32 sm:w-36 h-12
+/* ---- Center cluster ---- */
+.center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: 2;
+  width: max-content;
 }
 
-.buttonGroup {
-  @apply flex flex-wrap gap-2 justify-center mt-4
+.phasePill {
+  padding: 3px 12px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #fde68a;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.community {
+  display: flex;
+  gap: clamp(3px, 1vw, 7px);
+}
+
+.commCard {
+  position: relative;
+  flex: 0 0 auto;
+  height: clamp(78px, 19vw, 96px);
+  width: auto;
+  aspect-ratio: 2 / 3;
+  border-radius: 5px;
+  overflow: hidden;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
+  animation: dealIn 0.35s ease both;
+  animation-delay: calc(var(--i, 0) * 70ms);
+}
+
+.commEmpty {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1.5px dashed rgba(255, 255, 255, 0.25);
+  box-shadow: none;
+  animation: none;
+}
+
+.pot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.potLabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #9fd8b6;
+}
+
+.potValue {
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+}
+
+/* ---- Bet stacks (in-flow rows that sit in the gaps) ---- */
+.betStack {
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.betStackTop {
+  align-self: center;
+  transform: translateX(clamp(-110px, -16vw, -44px));
+}
+
+.betStackBottom {
+  align-self: center;
+  transform: translateX(clamp(44px, 16vw, 110px));
+}
+
+.chip {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fde68a, #d97706);
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* ---- Action dock ---- */
+.dock {
+  position: relative;
+  z-index: 30;
+  width: 100%;
+  max-width: 560px;
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.sheetBackdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: inherit;
+}
+
+.actionRow {
+  position: relative;
+  z-index: 31;
+  display: flex;
+  gap: 12px;
+}
+
+.actBtn {
+  flex: 1 1 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 56px;
+  border: none;
+  border-radius: 14px;
+  font-weight: 800;
+  font-size: 16px;
+  color: #fff;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 0.12s, filter 0.12s, box-shadow 0.12s;
+}
+
+.actBtn:hover:not(:disabled) {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+
+.actBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.foldBtn {
+  background: #1b2a22;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.callBtn {
+  background: #3fa564;
+}
+
+.raiseBtn {
+  background: #d9a23f;
+  color: #1f2937;
+}
+
+.raiseBtnActive {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.9);
+}
+
+.dealBtn {
+  background: #65a30d;
+}
+
+.resetBtn {
+  background: #dc2626;
+}
+
+.hint {
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.caret {
+  font-size: 12px;
+  transition: transform 0.25s ease;
+}
+
+.caretOpen {
+  transform: rotate(180deg);
+}
+
+/* ---- Raise sheet (slides down below the action row) ---- */
+.raiseSheet {
+  position: relative;
+  z-index: 31;
+  align-self: center;
+  width: 100%;
+  max-width: 520px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, margin-top 0.3s ease;
+  margin-top: 0;
+}
+
+.raiseSheetOpen {
+  max-height: 320px;
+  margin-top: 12px;
+}
+
+.sheetInner {
+  background: rgba(10, 16, 13, 0.97);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  padding: 12px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transform: translateY(-10px);
+  transition: transform 0.3s ease;
+}
+
+.raiseSheetOpen .sheetInner {
+  transform: translateY(0);
+}
+
+.handle {
+  align-self: center;
+  width: 52px;
+  height: 5px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  padding: 0;
+}
+
+.raiseToRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.raiseToLabel {
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  font-weight: 700;
+  color: #9aa6a0;
+}
+
+.raiseToValue {
+  font-size: 18px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.slider {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  outline: none;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #d9a23f;
+  border: 3px solid #1a130a;
+  cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #d9a23f;
+  border: 3px solid #1a130a;
+  cursor: pointer;
+}
+
+.presets {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.preset {
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: transparent;
+  color: #cbd5cf;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: all 0.15s;
+}
+
+.preset:hover {
+  border-color: rgba(217, 162, 63, 0.6);
+}
+
+.presetActive {
+  background: #d9a23f;
+  border-color: #d9a23f;
+  color: #1f2937;
+}
+
+.confirm {
+  height: 52px;
+  border: none;
+  border-radius: 14px;
+  background: #d9a23f;
+  color: #1f2937;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: filter 0.12s;
+}
+
+.confirm:hover {
+  filter: brightness(1.06);
+}
+
+.endRow {
+  display: flex;
+  gap: 12px;
+}
+
+.message {
+  margin-top: 14px;
+  color: #fde68a;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* ---- Mobile ---- */
+@media (max-width: 639px) {
+  .table {
+    order: 1;
+    width: 100%;
+  }
+
+  /* .yourHand is order: 2 (slim strip, see panel section) */
+  .dock {
+    order: 3;
+  }
+
+  .message {
+    order: 4;
+  }
+
+  .actBtn {
+    height: 50px;
+    font-size: 15px;
+    border-radius: 12px;
+  }
+
+  .actionRow {
+    gap: 8px;
+  }
 }
