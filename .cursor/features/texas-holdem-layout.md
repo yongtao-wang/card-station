@@ -144,7 +144,8 @@ that form the winner's best hand so players can see which combination won.
 - **Fold wins:** no highlight (no showdown).
 
 **Visual**
-- Class `.winningCard` on `.holeCard` and `.commCard`: soft gold `box-shadow` glow (no hard outline).
+- When **you** win: class `.winningCardYou` — thin gold outline + gold glow.
+- When **Mav** wins: class `.winningCardBot` — thin red outline + red glow.
 - Cards use `z-index: calc(N - var(--i))` so earlier cards in a row stack above later ones and a
   neighbor's glow does not paint on top of the card to its left.
 
@@ -159,4 +160,4 @@ that form the winner's best hand so players can see which combination won.
 - [ ] Table is a horizontal stadium (rounded left/right ends) with the existing rail treatment, fits the stage at all sizes, two seats top/bottom, centered phase pill + 5 community slots + pot, bet stacks offset off the center line; becomes a vertical stadium on mobile.
 - [ ] Action bar is one centered row of three equal buttons (Fold / Check-or-Call / Raise); the old inline slider column is gone.
 - [ ] Raise opens a full-width bottom sheet that slides up from the dock with a backdrop, slider, MIN/½POT/POT/MAX presets, and a confirm button that switches to "All In" at max; closes on confirm, other actions, backdrop/handle tap, or end of turn.
-- [ ] At showdown with a single winner, the five winning cards glow (hole + community); no glow on ties or fold wins; left cards stack above right so glow does not bleed over neighbors.
+- [ ] At showdown with a single winner, the five winning cards have a thin outline + glow (gold when you win, red when Mav wins); no highlight on ties or fold wins; left cards stack above right so glow does not bleed over neighbors.

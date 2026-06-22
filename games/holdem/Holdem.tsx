@@ -818,6 +818,12 @@ export default function Holdem() {
   const cardsRevealed =
     gameState.phase === 'showdown' || gameState.phase === 'gameOver'
   const winningCards = gameState.winningCards
+  const winningCardClass =
+    winningCards && gameState.winner === 'player'
+      ? styles.winningCardYou
+      : winningCards && gameState.winner === 'bot'
+        ? styles.winningCardBot
+        : ''
 
   const yourHand =
     player.cards.length === 2 && !isAnimatingOut
@@ -915,7 +921,7 @@ export default function Holdem() {
           className={`${styles.holeCard} ${
             cardsRevealed ? styles.flipped : ''
           } ${isAnimatingOut ? styles.flyOut : ''} ${
-            cardIsWinner ? styles.winningCard : ''
+            cardIsWinner ? winningCardClass : ''
           }`}
         >
           <div className={styles.cardInner}>
@@ -948,7 +954,7 @@ export default function Holdem() {
         key={index}
         style={{ '--i': index } as CSSProperties}
         className={`${styles.holeCard} ${isAnimatingOut ? styles.flyOut : ''} ${
-          cardIsWinner ? styles.winningCard : ''
+          cardIsWinner ? winningCardClass : ''
         }`}
       >
         <Image
@@ -1057,7 +1063,7 @@ export default function Holdem() {
                     style={{ '--i': index } as CSSProperties}
                     className={`${styles.commCard} ${
                       winningCards && isWinningCard(card, winningCards)
-                        ? styles.winningCard
+                        ? winningCardClass
                         : ''
                     }`}
                   >

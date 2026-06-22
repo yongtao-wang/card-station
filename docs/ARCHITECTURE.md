@@ -110,8 +110,9 @@ component but extract pure helpers into a sibling module:
 - `holdem.module.css` — stadium table, panels, action dock, showdown highlight styles.
 
 Showdown stores `winningCards` in game state (single winner only). Matching hole and community
-cards get a gold glow via `.winningCard` in the CSS module. Hand-evaluation tests live next to the
-logic; UI behavior is verified manually at `/games/holdem`.
+cards get a thin outline plus glow via `.winningCardYou` (gold, player wins) or `.winningCardBot`
+(red, bot wins) in the CSS module. Hand-evaluation tests live next to the logic; UI behavior is
+verified manually at `/games/holdem`.
 
 Reference: [games/holdem/holdemHand.ts](../games/holdem/holdemHand.ts),
 [.cursor/features/texas-holdem-layout.md](../.cursor/features/texas-holdem-layout.md).
