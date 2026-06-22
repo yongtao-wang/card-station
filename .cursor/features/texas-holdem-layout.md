@@ -4,11 +4,16 @@ Implementation brief for four UI features of the heads-up (2-player) Hold'em tab
 
 **Styling note:** match the project's existing visual language — reuse the current color tokens, fonts, spacing, radii, shadows, and glass/card treatments already in the stylesheet. The values below describe *intent and relative emphasis*, not exact numbers. Only treat a dimension as fixed when this doc says it is design-critical (e.g. the rounded table ends). Otherwise, fit it to what looks consistent with the current UI.
 
-Scope (only these four):
+Scope:
 1. Hand log
 2. Current highest hand indicator (top-right)
 3. Table layout
 4. Button (action) layout
+5. Showdown winning-card highlight
+
+**Code layout:** UI and betting flow live in `Holdem.tsx`; hand evaluation (`getBestHand`,
+`isWinningCard`, …) lives in `holdemHand.ts` with Vitest tests in `holdemHand.test.ts`. See
+[docs/ARCHITECTURE.md](../../docs/ARCHITECTURE.md).
 
 ---
 
@@ -122,9 +127,36 @@ Three equal-width buttons, centered:
 
 ---
 
+## 5. Showdown winning-card highlight
+
+At showdown, when there is a **single winner** (not a tie, not a fold win), highlight the five cards
+that form the winner's best hand so players can see which combination won.
+
+**Which cards**
+- `getBestHand` (in `holdemHand.ts`) picks the best 5 from the winner's 2 hole cards + 5 community
+  cards. Store the result in game state as `winningCards`.
+- Apply highlight to any matching hole or community card (rank + suit). Cards not in the winning five
+  stay unhighlighted (e.g. when the board plays).
+
+**When to show**
+- Phases `showdown` and `gameOver`, only when `winningCards` is non-null.
+- **Ties:** no highlight.
+- **Fold wins:** no highlight (no showdown).
+
+**Visual**
+- Class `.winningCard` on `.holeCard` and `.commCard`: soft gold `box-shadow` glow (no hard outline).
+- Cards use `z-index: calc(N - var(--i))` so earlier cards in a row stack above later ones and a
+  neighbor's glow does not paint on top of the card to its left.
+
+**Responsive**
+- Same treatment on mobile; glow scales with card size.
+
+---
+
 ## Acceptance checklist
 - [ ] Hand log appears top-left, logs every action + street + result, scrolls internally, no horizontal scrollbar, hidden on mobile.
 - [ ] "Your Hand" indicator appears top-right, shows the human's current best hand name + proportional strength bar, updates each street, hidden when no cards; moves bottom-right on mobile.
 - [ ] Table is a horizontal stadium (rounded left/right ends) with the existing rail treatment, fits the stage at all sizes, two seats top/bottom, centered phase pill + 5 community slots + pot, bet stacks offset off the center line; becomes a vertical stadium on mobile.
 - [ ] Action bar is one centered row of three equal buttons (Fold / Check-or-Call / Raise); the old inline slider column is gone.
 - [ ] Raise opens a full-width bottom sheet that slides up from the dock with a backdrop, slider, MIN/½POT/POT/MAX presets, and a confirm button that switches to "All In" at max; closes on confirm, other actions, backdrop/handle tap, or end of turn.
+- [ ] At showdown with a single winner, the five winning cards glow (hole + community); no glow on ties or fold wins; left cards stack above right so glow does not bleed over neighbors.

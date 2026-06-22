@@ -26,7 +26,7 @@ no game render, or absence from listings/SEO.
 - [ ] 5. Add public/assets/img/og/<slug>_og.webp
 - [ ] 6. Use a game-specific localStorage key prefix
 - [ ] 7. Add a "How to Play" SEO section in the component
-- [ ] 8. Verify: npm run lint + open /games/<slug> on desktop AND a mobile viewport
+- [ ] 8. Verify: npm test (if applicable) + npm run lint + open /games/<slug> on desktop AND a mobile viewport
 ```
 
 ## Step 1: Create the component
@@ -39,6 +39,8 @@ Choose a pattern:
 - Multi-phase state machine → reducer pattern (model on `games/blackjack/`): `types.ts`,
   `gameLogic.ts` (pure functions, no React), `gameReducer.ts`, `use<Name>Game.ts`, and a
   `components/` folder for presentational pieces.
+- Large UI with testable rules → component + pure module (model on `games/holdem/`): `<Name>.tsx`,
+  sibling `*.ts` for pure logic, `*.test.ts` for Vitest. See `docs/ARCHITECTURE.md`.
 
 Add `games/<slug>/<name>.module.css` for game-specific styles; use Tailwind utilities for layout.
 Card images: `/assets/img/cards/<rank>_of_<suit>.svg` and `card_back.jpg`.
@@ -85,6 +87,7 @@ Add a "How to Play" / rules section inside the component (see the bottom of `Bla
 
 ## Step 8: Verify
 
+- `npm test` passes (when the game has unit tests).
 - `npm run lint` passes.
 - `npm run dev`, open `/games/<slug>`, confirm the game renders (not just header/recommendations).
 - Check a mobile viewport: the board fits without horizontal overflow and controls are usable.

@@ -98,6 +98,37 @@ The top-level `BlackJack.tsx` is thin: it calls `useBlackjackGame()` and renders
 
 Reference: [games/blackjack/useBlackjackGame.ts](../games/blackjack/useBlackjackGame.ts).
 
+### 3. Component + pure logic module (Texas Hold'em)
+
+For a large single-screen game where most logic can be tested without React, keep one client
+component but extract pure helpers into a sibling module:
+
+- `Holdem.tsx` — client component: `useState`, betting flow, bot strategy, table UI, `localStorage`.
+- `holdemHand.ts` — pure hand evaluation (`getBestHand`, `compareHandValues`, `isWinningCard`, …).
+  No React imports. Returns the best 5-card combo including the actual `cards[]` used at showdown.
+- `holdemHand.test.ts` — Vitest unit tests for the pure module.
+- `holdem.module.css` — stadium table, panels, action dock, showdown highlight styles.
+
+Showdown stores `winningCards` in game state (single winner only). Matching hole and community
+cards get a gold glow via `.winningCard` in the CSS module. Hand-evaluation tests live next to the
+logic; UI behavior is verified manually at `/games/holdem`.
+
+Reference: [games/holdem/holdemHand.ts](../games/holdem/holdemHand.ts),
+[.cursor/features/texas-holdem-layout.md](../.cursor/features/texas-holdem-layout.md).
+
+## Testing
+
+The repo uses [Vitest](https://vitest.dev/) for unit tests on pure game logic (no DOM by default).
+
+- Config: [vitest.config.ts](../vitest.config.ts) (`environment: 'node'`, `**/*.{test,spec}.{ts,tsx}`).
+- Run: `npm test` (CI-style) or `npm run test:watch` (watch mode).
+- Convention: colocate `*.test.ts` next to the module under test (e.g. `holdemHand.test.ts` beside
+  `holdemHand.ts`). Prefer testing extracted pure functions over full React components unless
+  component tests are clearly needed.
+
+When adding non-trivial game logic, extract testable pure functions and cover key cases with Vitest
+before or alongside UI wiring.
+
 ## Responsive / mobile design
 
 The site is mobile-first. Conventions:

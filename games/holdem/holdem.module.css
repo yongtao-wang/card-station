@@ -264,6 +264,7 @@
    overlap regardless of viewport height. */
 .holeCard {
   position: relative;
+  z-index: calc(2 - var(--i, 0));
   flex: 0 0 auto;
   height: clamp(96px, 24vw, 116px);
   width: auto;
@@ -363,6 +364,7 @@
 
 .commCard {
   position: relative;
+  z-index: calc(5 - var(--i, 0));
   flex: 0 0 auto;
   height: clamp(78px, 19vw, 96px);
   width: auto;
@@ -379,6 +381,13 @@
   border: 1.5px dashed rgba(255, 255, 255, 0.25);
   box-shadow: none;
   animation: none;
+}
+
+.winningCard {
+  box-shadow:
+    0 0 8px 2px rgba(245, 213, 101, 0.6),
+    0 0 16px 4px rgba(245, 213, 101, 0.3),
+    0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .pot {

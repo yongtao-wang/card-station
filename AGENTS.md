@@ -11,8 +11,9 @@ on phones as well as desktop. Deployed at https://cardstation.games.
 - `npm run build` — production build
 - `npm start` — start production server on port 3000
 - `npm run lint` — ESLint (`eslint-config-next`)
+- `npm test` — Vitest unit tests (`vitest run`)
 
-There is no test suite. Verify changes with `npm run lint` and by loading the affected route.
+Verify changes with `npm test`, `npm run lint`, and by loading the affected route.
 
 ## Repository layout
 
@@ -22,6 +23,7 @@ There is no test suite. Verify changes with `npm run lint` and by loading the af
 - `hooks/` — shared hooks (`usePageDuration`).
 - `lib/site.ts` — site constants (name, url, author, locale).
 - `styles/globals.css` — global styles; each game also has its own `*.module.css`.
+- `vitest.config.ts` — Vitest config for colocated `*.test.ts` files.
 - `public/assets/img/` — card SVGs (`cards/`) and per-game OG images (`og/`).
 
 ## Conventions
@@ -39,6 +41,8 @@ There is no test suite. Verify changes with `npm run lint` and by loading the af
 - Persistence: each game stores its own state in `localStorage` with a game-specific key prefix
   (e.g. `bj_playerChips`, `highlow-best-streak`). No backend/database.
 - Cards: shared assets at `/assets/img/cards/<rank>_of_<suit>.svg` and `card_back.jpg`.
+- Pure game logic: extract to a sibling `*.ts` module and colocate `*.test.ts` when rules are
+  non-trivial (see `games/holdem/holdemHand.ts`). Run `npm test` before shipping.
 - Do not add comments that merely narrate code (see workspace Karpathy rules). Keep changes surgical.
 
 ## Adding a game — touch-points

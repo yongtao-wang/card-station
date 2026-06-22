@@ -6,28 +6,15 @@ import type { CSSProperties } from 'react'
 import Image from 'next/image'
 import { motion } from 'motion/react'
 import styles from './holdem.module.css'
-
-// Card types
-type Suit = 'hearts' | 'diamonds' | 'clubs' | 'spades'
-type Rank =
-  | '2'
-  | '3'
-  | '4'
-  | '5'
-  | '6'
-  | '7'
-  | '8'
-  | '9'
-  | '10'
-  | 'J'
-  | 'Q'
-  | 'K'
-  | 'A'
-
-interface Card {
-  suit: Suit
-  rank: Rank
-}
+import {
+  type Card,
+  type Rank,
+  type Suit,
+  compareHandValues,
+  getBestHand,
+  getCurrentBestHand,
+  isWinningCard,
+} from './holdemHand'
 
 type GamePhase = 'preflop' | 'flop' | 'turn' | 'river' | 'showdown' | 'gameOver'
 type PlayerAction = 'fold' | 'call' | 'raise' | 'check' | 'allIn'
@@ -61,6 +48,7 @@ interface GameState {
   minRaise: number
   winner: string | null
   winningHand: string | null
+  winningCards: Card[] | null
 }
 
 const SUITS: Suit[] = ['hearts', 'diamonds', 'clubs', 'spades']
@@ -112,193 +100,6 @@ const getSuitEmoji = (suit: Suit): string => {
   }
 }
 
-const getCardValue = (rank: Rank): number => {
-  if (rank === 'A') return 14
-  if (rank === 'K') return 13
-  if (rank === 'Q') return 12
-  if (rank === 'J') return 11
-  return parseInt(rank)
-}
-
-// Returns hand rank, description, and sorted values for tie-breaking
-const evaluateHand = (
-  cards: Card[]
-): { rank: number; description: string; values: number[] } => {
-  if (cards.length < 5)
-    return {
-      rank: 0,
-      description: 'High Card',
-      values: cards.map((c) => getCardValue(c.rank)).sort((a, b) => b - a),
-    }
-
-  const sortedCards = [...cards].sort(
-    (a, b) => getCardValue(b.rank) - getCardValue(a.rank)
-  )
-  const values = sortedCards.map((card) => getCardValue(card.rank))
-  const suits = sortedCards.map((card) => card.suit)
-
-  // Count occurrences
-  const valueCounts: { [key: number]: number } = {}
-  values.forEach((value) => {
-    valueCounts[value] = (valueCounts[value] || 0) + 1
-  })
-
-  const counts = Object.values(valueCounts).sort((a, b) => b - a)
-  const isFlush = suits.every((suit) => suit === suits[0])
-  const isStraight = values.every(
-    (value, index) => index === 0 || value === values[index - 1] - 1
-  )
-
-  // Royal Flush
-  if (isFlush && isStraight && values[0] === 14) {
-    return { rank: 9, description: 'Royal Flush', values }
-  }
-
-  // Straight Flush
-  if (isFlush && isStraight) {
-    return { rank: 8, description: 'Straight Flush', values }
-  }
-
-  // Four of a Kind
-  if (counts[0] === 4) {
-    // Find quad value and kicker
-    const quad = Number(
-      Object.keys(valueCounts).find((k) => valueCounts[Number(k)] === 4)
-    )
-    const kicker = values.find((v) => v !== quad) || quad
-    return { rank: 7, description: 'Four of a Kind', values: [quad, kicker] }
-  }
-
-  // Full House
-  if (counts[0] === 3 && counts[1] === 2) {
-    const trips = Number(
-      Object.keys(valueCounts).find((k) => valueCounts[Number(k)] === 3)
-    )
-    const pair = Number(
-      Object.keys(valueCounts).find((k) => valueCounts[Number(k)] === 2)
-    )
-    return { rank: 6, description: 'Full House', values: [trips, pair] }
-  }
-
-  // Flush
-  if (isFlush) {
-    return { rank: 5, description: 'Flush', values }
-  }
-
-  // Straight
-  if (isStraight) {
-    return { rank: 4, description: 'Straight', values }
-  }
-
-  // Three of a Kind
-  if (counts[0] === 3) {
-    const trips = Number(
-      Object.keys(valueCounts).find((k) => valueCounts[Number(k)] === 3)
-    )
-    const kickers = values.filter((v) => v !== trips)
-    return {
-      rank: 3,
-      description: 'Three of a Kind',
-      values: [trips, ...kickers],
-    }
-  }
-
-  // Two Pair
-  if (counts[0] === 2 && counts[1] === 2) {
-    const pairs = Object.keys(valueCounts)
-      .filter((k) => valueCounts[Number(k)] === 2)
-      .map(Number)
-      .sort((a, b) => b - a)
-    const kicker =
-      values.find((v) => v !== pairs[0] && v !== pairs[1]) || pairs[0]
-    return { rank: 2, description: 'Two Pair', values: [...pairs, kicker] }
-  }
-
-  // One Pair
-  if (counts[0] === 2) {
-    const pair = Number(
-      Object.keys(valueCounts).find((k) => valueCounts[Number(k)] === 2)
-    )
-    const kickers = values.filter((v) => v !== pair)
-    return { rank: 1, description: 'One Pair', values: [pair, ...kickers] }
-  }
-
-  // High Card
-  return { rank: 0, description: 'High Card', values }
-}
-
-const getBestHand = (
-  playerCards: Card[],
-  communityCards: Card[]
-): { rank: number; description: string; values: number[] } => {
-  const allCards = [...playerCards, ...communityCards]
-  let bestHand: { rank: number; description: string; values: number[] } | null =
-    null
-
-  // Try all combinations of 5 cards from the 7 available
-  for (let i = 0; i < allCards.length - 4; i++) {
-    for (let j = i + 1; j < allCards.length - 3; j++) {
-      for (let k = j + 1; k < allCards.length - 2; k++) {
-        for (let l = k + 1; l < allCards.length - 1; l++) {
-          for (let m = l + 1; m < allCards.length; m++) {
-            const hand = [
-              allCards[i],
-              allCards[j],
-              allCards[k],
-              allCards[l],
-              allCards[m],
-            ]
-            const evaluation = evaluateHand(hand)
-            if (
-              !bestHand ||
-              evaluation.rank > bestHand.rank ||
-              (evaluation.rank === bestHand.rank &&
-                compareHandValues(evaluation.values, bestHand.values) > 0)
-            ) {
-              bestHand = evaluation
-            }
-          }
-        }
-      }
-    }
-  }
-
-  return bestHand || { rank: -1, description: '', values: [] }
-}
-
-// Best made hand for the "YOUR HAND" indicator. Works with 2 hole cards
-// (preflop) by detecting a pocket pair, otherwise delegates to getBestHand.
-const getCurrentBestHand = (
-  holeCards: Card[],
-  communityCards: Card[]
-): { description: string; rank: number } | null => {
-  if (holeCards.length === 0) return null
-  if (holeCards.length + communityCards.length >= 5) {
-    const best = getBestHand(holeCards, communityCards)
-    return { description: best.description, rank: best.rank }
-  }
-  const counts: { [value: number]: number } = {}
-  ;[...holeCards, ...communityCards].forEach((c) => {
-    const v = getCardValue(c.rank)
-    counts[v] = (counts[v] || 0) + 1
-  })
-  const hasPair = Object.values(counts).some((n) => n >= 2)
-  return hasPair
-    ? { description: 'Pair', rank: 1 }
-    : { description: 'High Card', rank: 0 }
-}
-
-// Compare two hand values arrays for tie-breaking
-function compareHandValues(a: number[], b: number[]): number {
-  for (let i = 0; i < Math.max(a.length, b.length); i++) {
-    const va = a[i] ?? 0
-    const vb = b[i] ?? 0
-    if (va > vb) return 1
-    if (va < vb) return -1
-  }
-  return 0
-}
-
 // ---- 1) Simple preflop hand grouping ----
 function preflopGroup(a: Card, b: Card): number {
   // 0 -> strongest, 5 -> weakest
@@ -340,7 +141,7 @@ function preflopGroup(a: Card, b: Card): number {
 
 // ---- 2) Estimate postflop hand strength (quick approximation, not true equity) ----
 function postflopStrengthRank(my: Card[], board: Card[]): number {
-  return evaluateHand([...my, ...board]).rank // 0~9
+  return getBestHand(my, board).rank
 }
 
 // ---- 3) (Optional) Monte Carlo estimate of equity vs 1 opponent ----
@@ -522,6 +323,7 @@ export default function Holdem() {
     minRaise: 20,
     winner: null,
     winningHand: null,
+    winningCards: null,
   })
 
   const [deck, setDeck] = useState<Card[]>([])
@@ -618,6 +420,7 @@ export default function Holdem() {
         players: newPlayers,
         winner: null,
         winningHand: null,
+        winningCards: null,
       }))
 
       // Reset animation state
@@ -654,6 +457,7 @@ export default function Holdem() {
           players: newPlayers,
           winner: null,
           winningHand: null,
+          winningCards: null,
         }))
 
         setDeck(newDeck.slice(4))
@@ -894,6 +698,15 @@ export default function Holdem() {
             }
             newState.winner = winnerId
             newState.winningHand = winningHandDesc
+            if (winnerId !== 'tie') {
+              const winnerHole = newState.players.find((p) => p.id === winnerId)!
+              newState.winningCards = getBestHand(
+                winnerHole.cards,
+                newState.communityCards
+              ).cards
+            } else {
+              newState.winningCards = null
+            }
 
             // Award pot
             if (newState.winner !== 'tie') {
@@ -1004,6 +817,7 @@ export default function Holdem() {
   const isMyTurn = gameState.currentPlayer === 'player'
   const cardsRevealed =
     gameState.phase === 'showdown' || gameState.phase === 'gameOver'
+  const winningCards = gameState.winningCards
 
   const yourHand =
     player.cards.length === 2 && !isAnimatingOut
@@ -1088,6 +902,11 @@ export default function Holdem() {
   }
 
   const renderHoleCard = (card: Card, index: number, faceDown: boolean) => {
+    const cardIsWinner =
+      cardsRevealed &&
+      winningCards &&
+      isWinningCard(card, winningCards)
+
     if (faceDown) {
       return (
         <div
@@ -1095,7 +914,9 @@ export default function Holdem() {
           style={{ '--i': index } as CSSProperties}
           className={`${styles.holeCard} ${
             cardsRevealed ? styles.flipped : ''
-          } ${isAnimatingOut ? styles.flyOut : ''}`}
+          } ${isAnimatingOut ? styles.flyOut : ''} ${
+            cardIsWinner ? styles.winningCard : ''
+          }`}
         >
           <div className={styles.cardInner}>
             <div className={styles.cardFront}>
@@ -1126,7 +947,9 @@ export default function Holdem() {
       <div
         key={index}
         style={{ '--i': index } as CSSProperties}
-        className={`${styles.holeCard} ${isAnimatingOut ? styles.flyOut : ''}`}
+        className={`${styles.holeCard} ${isAnimatingOut ? styles.flyOut : ''} ${
+          cardIsWinner ? styles.winningCard : ''
+        }`}
       >
         <Image
           src={getCardSvgPath(card)}
@@ -1232,7 +1055,11 @@ export default function Holdem() {
                   <div
                     key={index}
                     style={{ '--i': index } as CSSProperties}
-                    className={styles.commCard}
+                    className={`${styles.commCard} ${
+                      winningCards && isWinningCard(card, winningCards)
+                        ? styles.winningCard
+                        : ''
+                    }`}
                   >
                     <Image
                       src={getCardSvgPath(card)}

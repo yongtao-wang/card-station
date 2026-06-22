@@ -24,6 +24,9 @@ Set `NEXT_PUBLIC_SITE_URL` in your environment (e.g. `.env.local`) to enable can
 - `npm run dev` — start dev server
 - `npm run build` — production build
 - `npm start` — start production server
+- `npm run lint` — ESLint
+- `npm test` — Vitest unit tests
+- `npm run test:watch` — Vitest watch mode
 
 ## Develop
 

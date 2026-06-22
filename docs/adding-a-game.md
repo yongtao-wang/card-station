@@ -23,6 +23,9 @@ Pick an implementation pattern based on complexity:
 - Multi-phase state machine → reducer pattern. Copy the structure under
   [games/blackjack/](../games/blackjack/): `types.ts`, `gameLogic.ts` (pure), `gameReducer.ts`,
   `use<Name>Game.ts`, optional `useAnimationSequencer.ts`, and a `components/` folder.
+- Large single component with testable rules → component + pure module. Copy
+  [games/holdem/](../games/holdem/): `<Name>.tsx` for UI/state, a sibling `*.ts` for pure logic
+  (no React), and `*.test.ts` for Vitest. See [ARCHITECTURE.md](ARCHITECTURE.md#3-component--pure-logic-module-texas-holdem).
 
 The component must be the default export and a client component:
 
@@ -112,6 +115,7 @@ copy and avoids thin-content SEO penalties.
 
 ## 8. Verify
 
+- `npm test` passes (when the game has unit tests).
 - `npm run lint` passes.
 - `npm run dev`, then open `/games/<slug>` — the game renders (not just the page chrome).
 - Check a mobile viewport (e.g. browser device toolbar): the board fits without horizontal overflow
