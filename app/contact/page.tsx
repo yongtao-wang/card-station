@@ -1,10 +1,10 @@
 import ContactForm from './ContactForm'
+import JsonLd from '@/components/JsonLd'
 import type { Metadata } from 'next'
-import Script from 'next/script'
 import { site } from '@/lib/site'
 
 export const metadata: Metadata = {
-  title: 'Contact Us — Card Station',
+  title: 'Contact Us',
   description:
     'Get in touch with Card Station. Contact us for feedback, support, or questions about our free online card games.',
   alternates: { canonical: `${site.url || ''}/contact` },
@@ -34,12 +34,11 @@ export const metadata: Metadata = {
 export default function ContactPage() {
   return (
     <div className='space-y-8 mx-auto py-16 px-4 max-w-4xl'>
-      {/* JSON-LD structured data for FAQ */}
-      <Script id="faq-structured-data" type="application/ld+json">
-        {JSON.stringify({
+      <JsonLd
+        data={{
           '@context': 'https://schema.org',
           '@type': 'FAQPage',
-          'mainEntity': [
+          mainEntity: [
             {
               '@type': 'Question',
               'name': 'How do I report a bug?',
@@ -80,9 +79,9 @@ export default function ContactPage() {
                 'text': 'You can use the contact form on this page to send us your feedback, questions, or suggestions. We value all input from our community.'
               }
             }
-          ]
-        })}
-      </Script>
+          ],
+        }}
+      />
 
       <header className='text-center'>
         <h1 className='text-3xl md:text-4xl font-extrabold tracking-tight text-white mb-4'>

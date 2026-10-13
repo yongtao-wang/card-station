@@ -4,8 +4,8 @@ import HighLow from '@/games/highlow/HighLow'
 import Holdem from '@/games/holdem/Holdem'
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import JsonLd from '@/components/JsonLd'
 import Recommendation from '@/components/Recommendation'
-import Script from 'next/script'
 import Snap from '@/games/snap/Snap'
 import War from '@/games/war/War'
 import { games } from '@/games/index'
@@ -83,16 +83,16 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
 
   return (
     <div className='sm:space-y-8'>
-      <Script id="game-jsonld" type="application/ld+json">
-        {JSON.stringify({
+      <JsonLd
+        data={{
           '@context': 'https://schema.org',
           '@type': 'Game',
-          'name': game.title,
-          'description': game.description,
-          'url': `${site.url ? site.url : ''}/games/${game.slug}`,
-          'image': ogImageUrl
-        })}
-      </Script>
+          name: game.title,
+          description: game.description,
+          url: `${site.url ? site.url : ''}/games/${game.slug}`,
+          image: ogImageUrl,
+        }}
+      />
 
       <header className='hidden sm:flex items-center justify-between p-4 sm:px-0'>
         <div>

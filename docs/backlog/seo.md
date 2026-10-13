@@ -73,6 +73,7 @@ Desktop: avg position 31; mobile: 20.
   don't run JS reliably; Bing (~8× Google's traffic) leans on it. Prerequisite for SEO-07 and rich results.
 - **Effort rationale:** agent ~20 min (3 files); human: diff review.
 - **Done when:** `curl` of each page shows the JSON-LD as a real tag; Rich Results Test parses it.
+- **Outcome (2026-10-13):** Game, `/games`, and contact JSON-LD render through `components/JsonLd.tsx` as `<script type="application/ld+json">`. `<` is escaped so the payload cannot close the tag.
 
 <a id="seo-02"></a>
 ### SEO-02 — Fix broken `/games/texas-holdem` link
@@ -85,6 +86,7 @@ Desktop: avg position 31; mobile: 20.
 - **Impact rationale:** One broken internal link on a low-traffic page (`/games`, 18 visitors/30d).
 - **Effort rationale:** agent ~2 min. Bundle with SEO-01.
 - **Done when:** link resolves to the Hold'em page.
+- **Outcome (2026-10-13):** The `/games` prose link now points at `/games/holdem`.
 
 <a id="seo-03"></a>
 ### SEO-03 — Remove fake `SearchAction`
@@ -99,6 +101,7 @@ Desktop: avg position 31; mobile: 20.
 - **Impact rationale:** Invalid structured data; small risk of being ignored, no ranking upside.
 - **Effort rationale:** agent ~2 min. Bundle with SEO-01.
 - **Done when:** `potentialAction` is gone from the rendered JSON-LD.
+- **Outcome (2026-10-13):** `potentialAction` removed from the root `WebSite` block.
 
 <a id="seo-04"></a>
 ### SEO-04 — Remove doubled brand in page titles
@@ -115,6 +118,7 @@ Desktop: avg position 31; mobile: 20.
 - **Impact rationale:** About/contact get ~30 visitors/30d combined; cosmetic in SERPs.
 - **Effort rationale:** agent ~5 min.
 - **Done when:** no rendered `<title>` contains "Card Station" twice.
+- **Outcome (2026-10-13):** Page titles are now "About — Free Online Card Games", "Contact Us", and "Page Not Found". Open Graph and Twitter titles on contact still include the brand.
 
 <a id="seo-05"></a>
 ### SEO-05 — Fix nested links on `/games`
@@ -128,6 +132,7 @@ Desktop: avg position 31; mobile: 20.
 - **Impact rationale:** HTML validity; crawlers handle it, little measurable effect.
 - **Effort rationale:** agent ~5 min.
 - **Done when:** one anchor per card.
+- **Outcome (2026-10-13):** The outer `<Link>` on `/games` is gone. Each card keeps the single anchor inside `GameCard`.
 
 <a id="seo-06"></a>
 ### SEO-06 — Real `lastModified` dates in sitemap
@@ -394,6 +399,7 @@ Rules for this phase:
 - **Impact rationale:** Doc accuracy only.
 - **Effort rationale:** agent ~1 min.
 - **Done when:** AGENTS.md shows the `www` domain.
+- **Outcome (2026-10-13):** AGENTS.md now says `https://www.cardstation.games`.
 
 <a id="seo-26"></a>
 ### SEO-26 — Guard against duplicate game descriptions
@@ -406,6 +412,7 @@ Rules for this phase:
 - **Impact rationale:** Prevents a future problem; no current duplicates.
 - **Effort rationale:** agent ~10 min.
 - **Done when:** test exists and passes.
+- **Outcome (2026-10-13):** `games/index.test.ts` fails if two games share a `description`.
 
 <a id="seo-20"></a>
 ### SEO-20 — Correct About page claims

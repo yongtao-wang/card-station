@@ -4,7 +4,7 @@ import { games } from '@/games/index'
 import { site } from '@/lib/site'
 
 export const metadata: Metadata = {
-  title: 'Page Not Found — Card Station',
+  title: 'Page Not Found',
   description:
     "The page you're looking for doesn't exist. Browse our free online card games instead.",
   robots: { index: false, follow: true },

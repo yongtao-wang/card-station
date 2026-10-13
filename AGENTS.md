@@ -3,7 +3,7 @@
 Card Station is a free, mobile-friendly card-games site (Blackjack, Texas Hold'em vs Bot, Flip Card,
 War, High Low, Snap). Stack: Next.js 16 (App Router) + React 18 + TypeScript + Tailwind CSS 3.
 Games run entirely client-side (no backend/database), and the UI is responsive — it must work well
-on phones as well as desktop. Deployed at https://cardstation.games.
+on phones as well as desktop. Deployed at https://www.cardstation.games.
 
 ## Commands
 

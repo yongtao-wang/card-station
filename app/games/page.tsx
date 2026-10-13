@@ -1,7 +1,7 @@
 import GameCard from '@/components/GameCard'
+import JsonLd from '@/components/JsonLd'
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import Script from 'next/script'
 import { games } from '@/games/index'
 import { site } from '@/lib/site'
 
@@ -73,21 +73,21 @@ export default function GamesPage() {
 
   return (
     <div className='space-y-8'>
-      <Script id="games-itemlist-ld" type="application/ld+json">
-        {JSON.stringify({
+      <JsonLd
+        data={{
           '@context': 'https://schema.org',
           '@type': 'ItemList',
-          'name': 'All Card Games',
-          'itemListElement': games.map((game, idx) => ({
+          name: 'All Card Games',
+          itemListElement: games.map((game, idx) => ({
             '@type': 'ListItem',
-            'position': idx + 1,
-            'url': `${site.url ? site.url : ''}/games/${game.slug}`,
-            'name': game.title,
-            'description': game.description,
-            'image': `${site.url ? site.url : ''}${getGameImage(game.slug)}`
-          }))
-        })}
-      </Script>
+            position: idx + 1,
+            url: `${site.url ? site.url : ''}/games/${game.slug}`,
+            name: game.title,
+            description: game.description,
+            image: `${site.url ? site.url : ''}${getGameImage(game.slug)}`,
+          })),
+        }}
+      />
 
       <header className='text-center space-y-4'>
         <h1 className='text-3xl md:text-4xl font-extrabold tracking-tight'>
@@ -102,13 +102,12 @@ export default function GamesPage() {
 
       <section className='grid grid-cols-2 lg:grid-cols-3 px-4 sm:px-0 gap-3 sm:gap-6'>
         {games.map((game) => (
-          <Link key={game.slug} href={`/games/${game.slug}`}>
-            <GameCard
-              title={game.title}
-              description={`${game.description} Play ${game.title} online free, no download required.`}
-              slug={game.slug}
-            />
-          </Link>
+          <GameCard
+            key={game.slug}
+            title={game.title}
+            description={`${game.description} Play ${game.title} online free, no download required.`}
+            slug={game.slug}
+          />
         ))}
       </section>
 
@@ -123,7 +122,7 @@ export default function GamesPage() {
               Improve your strategic thinking with games like{' '}
               <Link href="/games/blackjack" className="underline hover:text-white">Blackjack</Link>{' '}
               and{' '}
-              <Link href="/games/texas-holdem" className="underline hover:text-white">Texas Hold'em</Link>. Practice probability, memory, and decision-making
+              <Link href="/games/holdem" className="underline hover:text-white">Texas Hold'em</Link>. Practice probability, memory, and decision-making
               skills.
             </p>
           </div>

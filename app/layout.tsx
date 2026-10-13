@@ -5,6 +5,7 @@ import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import type { Metadata } from 'next'
 import Script from 'next/script'
+import JsonLd from '@/components/JsonLd'
 import { site } from '@/lib/site'
 import { games, type GameMeta } from '@/games/index'
 import { PageTracker } from '@/components/PageTracker'
@@ -99,30 +100,20 @@ export default function RootLayout({
           strategy='afterInteractive'
           crossOrigin='anonymous'
         />
-        {/* Global structured data for the site & games */}
-        <script
-          type='application/ld+json'
-          // eslint-disable-next-line react/no-danger
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              '@context': 'https://schema.org',
-              '@type': 'WebSite',
-              name: 'Card Station',
-              url: site.url || undefined,
-              potentialAction: {
-                '@type': 'SearchAction',
-                target: `${site.url || ''}/?q={search_term_string}`,
-                'query-input': 'required name=search_term_string',
-              },
-              hasPart: (games as GameMeta[]).map((g) => ({
-                '@type': 'Game',
-                name: g.title,
-                url: site.url
-                  ? `${site.url}/games/${g.slug}`
-                  : `/games/${g.slug}`,
-                description: g.description,
-              })),
-            }),
+        <JsonLd
+          data={{
+            '@context': 'https://schema.org',
+            '@type': 'WebSite',
+            name: 'Card Station',
+            url: site.url || undefined,
+            hasPart: (games as GameMeta[]).map((g) => ({
+              '@type': 'Game',
+              name: g.title,
+              url: site.url
+                ? `${site.url}/games/${g.slug}`
+                : `/games/${g.slug}`,
+              description: g.description,
+            })),
           }}
         />
       </body>
