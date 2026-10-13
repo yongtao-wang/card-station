@@ -1,0 +1,15 @@
+name: Ticket
+description: An issue or an idea to come back to.
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What the problem or idea is, and why it matters.
+    validations:
+      required: true
+  - type: textarea
+    id: investigation
+    attributes:
+      label: Investigation
+      description: Optional. What was checked, the cause if known, guesses still to test.

@@ -77,7 +77,6 @@ See [.cursor/skills/add-new-game/SKILL.md](.cursor/skills/add-new-game/SKILL.md)
 
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — how rendering, the registry, game patterns, and SEO fit together.
 - [docs/adding-a-game.md](docs/adding-a-game.md) — step-by-step game authoring guide.
-- [docs/backlog/backlog-master-list.md](docs/backlog/backlog-master-list.md) — backlog status board (ticket IDs like `SEO-01`);
-  each topic has a reference doc with ticket details. Use the backlog skill
-  ([.claude/skills/backlog/SKILL.md](.claude/skills/backlog/SKILL.md)) to record or work tickets;
-  when you finish or change a ticket, update its status row there.
+- Backlog — the repo's open GitHub issues (`gh issue list`). Add, close or drop one with the
+  backlog-gh skill ([.claude/skills/backlog-gh/SKILL.md](.claude/skills/backlog-gh/SKILL.md)).
+- [docs/seo.md](docs/seo.md) — SEO baseline data and the retargeting rules.

@@ -146,7 +146,7 @@ The site is mobile-first. Conventions:
 
 ## SEO surfaces
 
-SEO is a first-class concern (see `docs/backlog/seo.md`). Relevant pieces:
+SEO is a first-class concern (see `docs/seo.md`). Relevant pieces:
 
 - `app/layout.tsx` — global metadata + `WebSite` JSON-LD.
 - `app/page.tsx` / `app/games/page.tsx` — page-level `metadata`.
