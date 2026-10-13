@@ -6,7 +6,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next'
 import type { Metadata } from 'next'
 import Script from 'next/script'
 import JsonLd from '@/components/JsonLd'
-import { site } from '@/lib/site'
+import { site, withSiteUrl } from '@/lib/site'
 import { games, type GameMeta } from '@/games/index'
 import { PageTracker } from '@/components/PageTracker'
 
@@ -107,13 +107,21 @@ export default function RootLayout({
             name: 'Card Station',
             url: site.url || undefined,
             hasPart: (games as GameMeta[]).map((g) => ({
-              '@type': 'Game',
+              '@type': 'VideoGame',
               name: g.title,
-              url: site.url
-                ? `${site.url}/games/${g.slug}`
-                : `/games/${g.slug}`,
+              url: withSiteUrl(`/games/${g.slug}`),
               description: g.description,
+              image: withSiteUrl(g.ogImage.src),
             })),
+          }}
+        />
+        <JsonLd
+          data={{
+            '@context': 'https://schema.org',
+            '@type': 'Organization',
+            name: 'Card Station',
+            url: site.url || undefined,
+            logo: withSiteUrl('/assets/icons/android-chrome-512x512.png'),
           }}
         />
       </body>

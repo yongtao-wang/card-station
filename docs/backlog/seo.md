@@ -147,6 +147,7 @@ Desktop: avg position 31; mobile: 20.
 - **Impact rationale:** Makes recrawl signals trustworthy for Bing and pairs with IndexNow (SEO-14).
 - **Effort rationale:** agent ~20 min.
 - **Done when:** two consecutive builds produce identical sitemap dates.
+- **Outcome (2026-10-13):** Each game's `updatedAt` and `pageUpdatedAt` in `app/sitemap.ts` are the sitemap dates. `app/sitemap.test.ts` asserts they stay stable.
 
 <a id="seo-07"></a>
 ### SEO-07 — Richer structured data
@@ -167,6 +168,7 @@ Desktop: avg position 31; mobile: 20.
 - **Effort rationale:** agent ~1–2h including validation.
 - **Depends on:** SEO-01, SEO-08.
 - **Done when:** Schema validator shows no errors on `/`, `/games`, and one game page.
+- **Outcome (2026-10-13):** Game pages emit `VideoGame` (free offer, browser platform, own image) and `BreadcrumbList`. The layout emits `Organization` with the existing 512px icon as `logo`. No ratings were added.
 
 <a id="seo-08"></a>
 ### SEO-08 — Move OG image map into the game registry
@@ -183,6 +185,7 @@ Desktop: avg position 31; mobile: 20.
   maintenance trap for new games.
 - **Effort rationale:** agent ~45 min (5 files + docs).
 - **Done when:** one source of truth; each game's JSON-LD and OG tags reference its own image.
+- **Outcome (2026-10-13):** `GameMeta.ogImage` holds the path and the file's real pixel size. Cards, home, `/games`, contact, and game-page metadata read it. A test fails if the recorded size doesn't match the webp.
 
 <a id="seo-14"></a>
 ### SEO-14 — IndexNow: key file + ping on deploy

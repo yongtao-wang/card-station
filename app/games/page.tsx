@@ -3,7 +3,7 @@ import JsonLd from '@/components/JsonLd'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { games } from '@/games/index'
-import { site } from '@/lib/site'
+import { site, withSiteUrl } from '@/lib/site'
 
 export const metadata: Metadata = {
   title: 'All Card Games — Free Online Card & Memory Games',
@@ -16,61 +16,22 @@ export const metadata: Metadata = {
       "Browse all free online card games: Blackjack, Texas Hold'em vs Bot, Flip Card memory game, High Low, Snap & War. Instant play, no signup required.",
     type: 'website',
     url: site.url ? `${site.url}/games` : undefined,
-    images: [
-      {
-        url: site.url ? `${site.url}/assets/img/og/holdem_og.webp` : '/assets/img/og/holdem_og.webp',
-        width: 1200,
-        height: 630,
-        alt: 'All Card Games - Free Online Card & Memory Games'
-      },
-      {
-        url: site.url ? `${site.url}/assets/img/og/blackjack_og.webp` : '/assets/img/og/blackjack_og.webp',
-        width: 1200,
-        height: 630,
-        alt: 'Blackjack - Free Online Card Game'
-      },
-      {
-        url: site.url ? `${site.url}/assets/img/og/flipcard_og.webp` : '/assets/img/og/flipcard_og.webp',
-        width: 1200,
-        height: 630,
-        alt: 'Flip Card - Free Online Memory Game'
-      },
-      {
-        url: site.url ? `${site.url}/assets/img/og/war_og.webp` : '/assets/img/og/war_og.webp',
-        width: 1200,
-        height: 630,
-        alt: 'War - Free Online Card Game'
-      },
-      {
-        url: site.url ? `${site.url}/assets/img/og/highlow_og.webp` : '/assets/img/og/highlow_og.webp',
-        width: 1200,
-        height: 630,
-        alt: 'High Low - Free Online Card Game'
-      },
-      {
-        url: site.url ? `${site.url}/assets/img/og/snap_og.webp` : '/assets/img/og/snap_og.webp',
-        width: 1200,
-        height: 630,
-        alt: 'Snap - Free Online Card Game'
-      }
-    ],
+    images: games.map((game) => ({
+      url: withSiteUrl(game.ogImage.src),
+      width: game.ogImage.width,
+      height: game.ogImage.height,
+      alt: `${game.title} - Play Free Online`,
+    })),
   },
   twitter: {
     card: 'summary_large_image',
     title: 'All Card Games — Free Online Card & Memory Games',
     description: "Browse all free online card games: Blackjack, Texas Hold'em vs Bot, Flip Card memory game, High Low, Snap & War. Instant play, no signup required.",
-    images: [site.url ? `${site.url}/assets/img/og/holdem_og.webp` : '/assets/img/og/holdem_og.webp'],
+    images: [withSiteUrl(games.find((game) => game.slug === 'holdem')!.ogImage.src)],
   },
 }
 
 export default function GamesPage() {
-  const getGameImage = (gameSlug: string) => {
-    const gameImages: Record<string, string> = {
-      'holdem': '/assets/img/og/holdem_og.webp',
-    }
-    return gameImages[gameSlug] || '/assets/img/og/holdem_og.webp'
-  }
-
   return (
     <div className='space-y-8'>
       <JsonLd
@@ -84,7 +45,7 @@ export default function GamesPage() {
             url: `${site.url ? site.url : ''}/games/${game.slug}`,
             name: game.title,
             description: game.description,
-            image: `${site.url ? site.url : ''}${getGameImage(game.slug)}`,
+            image: withSiteUrl(game.ogImage.src),
           })),
         }}
       />

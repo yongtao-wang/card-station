@@ -1,7 +1,10 @@
 import ContactForm from './ContactForm'
 import JsonLd from '@/components/JsonLd'
 import type { Metadata } from 'next'
-import { site } from '@/lib/site'
+import { games } from '@/games/index'
+import { site, withSiteUrl } from '@/lib/site'
+
+const holdemOg = games.find((game) => game.slug === 'holdem')!.ogImage
 
 export const metadata: Metadata = {
   title: 'Contact Us',
@@ -16,9 +19,9 @@ export const metadata: Metadata = {
     siteName: 'Card Station',
     images: [
       {
-        url: site.url ? `${site.url}/assets/img/og/holdem_og.webp` : '/assets/img/og/holdem_og.webp',
-        width: 1200,
-        height: 630,
+        url: withSiteUrl(holdemOg.src),
+        width: holdemOg.width,
+        height: holdemOg.height,
         alt: 'Contact Card Station - Free Online Card Games'
       }
     ],
@@ -27,7 +30,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Contact Us — Card Station',
     description: 'Get in touch with Card Station. Contact us for feedback, support, or questions about our free online card games.',
-    images: [site.url ? `${site.url}/assets/img/og/holdem_og.webp` : '/assets/img/og/holdem_og.webp'],
+    images: [withSiteUrl(holdemOg.src)],
   },
 }
 

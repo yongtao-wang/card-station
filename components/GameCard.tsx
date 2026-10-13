@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
+import { games } from '@/games/index'
 
 type Props = {
   title: string
@@ -8,18 +9,8 @@ type Props = {
 }
 
 export default function GameCard({ title, description, slug }: Props) {
-  // Get OG image based on game slug
-  const getOgImage = (gameSlug?: string) => {
-    const ogImages: Record<string, string> = {
-      holdem: '/assets/img/og/holdem_og.webp',
-      blackjack: '/assets/img/og/blackjack_og.webp',
-      flipcard: '/assets/img/og/flipcard_og.webp',
-      war: '/assets/img/og/war_og.webp',
-      highlow: '/assets/img/og/highlow_og.webp',
-      snap: '/assets/img/og/snap_og.webp',
-    }
-    return ogImages[gameSlug || ''] || '/assets/img/og/holdem_og.webp' // Default image
-  }
+  const ogImage = games.find((game) => game.slug === slug)?.ogImage
+  const src = ogImage?.src ?? games[0].ogImage.src
 
   return (
     <div className=''>
@@ -28,7 +19,7 @@ export default function GameCard({ title, description, slug }: Props) {
         <Link key={slug} href={`/games/${slug}`}>
           <div className='relative w-full h-full'>
             <Image
-              src={getOgImage(slug)}
+              src={src}
               alt={`${title} card game`}
               fill
               className='object-cover rounded-lg'

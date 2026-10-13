@@ -150,12 +150,11 @@ SEO is a first-class concern (see `docs/backlog/seo.md`). Relevant pieces:
 
 - `app/layout.tsx` — global metadata + `WebSite` JSON-LD.
 - `app/page.tsx` / `app/games/page.tsx` — page-level `metadata`.
-- `app/games/[slug]/page.tsx` — `generateMetadata` (dynamic title/description/canonical/OG) and a
-  per-page `Game` JSON-LD `<Script>`.
-- OG image maps — slug → `/assets/img/og/<slug>_og.webp`, duplicated in
-  [app/games/[slug]/page.tsx](../app/games/[slug]/page.tsx) and
-  [components/GameCard.tsx](../components/GameCard.tsx); keep them in sync.
-- `app/sitemap.ts` — generates sitemap entries from the registry.
+- `app/games/[slug]/page.tsx` — `generateMetadata` (dynamic title/description/canonical/OG) and
+  per-page `VideoGame` and `BreadcrumbList` JSON-LD.
+- OG images — `ogImage` (path, width, height) on each `GameMeta` entry. Cards, metadata, and
+  JSON-LD read that field.
+- `app/sitemap.ts` — generates sitemap entries from the registry, using each game's `updatedAt`.
 - `lib/site.ts` — `site.url` from `NEXT_PUBLIC_SITE_URL` gates absolute URLs everywhere above.
 
 Each game page also includes a long "How to Play" content section (inside the game component) to

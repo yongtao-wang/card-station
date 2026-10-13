@@ -10,7 +10,7 @@ import Snap from '@/games/snap/Snap'
 import War from '@/games/war/War'
 import { games } from '@/games/index'
 import { notFound } from 'next/navigation'
-import { site } from '@/lib/site'
+import { site, withSiteUrl } from '@/lib/site'
 
 export async function generateMetadata(
   { params }: { params: Promise<{ slug: string }>  }
@@ -22,22 +22,7 @@ export async function generateMetadata(
   const title = `${game.title} — Play Free Online`
   const description = `${game.description} Play it free on Card Station.`
   const url = site.url ? `${site.url}/games/${game.slug}` : undefined
-  
-  // Fetch OG image based on game slug
-  const getOgImage = (gameSlug: string) => {
-    const ogImages: Record<string, string> = {
-      'holdem': '/assets/img/og/holdem_og.webp',
-      'blackjack': '/assets/img/og/blackjack_og.webp',
-      'flipcard': '/assets/img/og/flipcard_og.webp',
-      'war': '/assets/img/og/war_og.webp',
-      'highlow': '/assets/img/og/highlow_og.webp',
-      'snap': '/assets/img/og/snap_og.webp',
-      // Add more mappings as more games are added
-    }
-    return ogImages[gameSlug] || '/assets/img/og/holdem_og.webp' // default to holdem image
-  }
-
-  const ogImage = site.url ? `${site.url}${getOgImage(slug)}` : getOgImage(slug)
+  const ogImage = withSiteUrl(game.ogImage.src)
 
   return {
     title,
@@ -52,8 +37,8 @@ export async function generateMetadata(
       images: [
         {
           url: ogImage,
-          width: 1200,
-          height: 630,
+          width: game.ogImage.width,
+          height: game.ogImage.height,
           alt: `${game.title} - Play Free Online Card Game`
         }
       ],
@@ -72,25 +57,37 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
   const game = games.find((g) => g.slug === slug)
   if (!game) return notFound()
 
-  const getOgImage = (gameSlug: string) => {
-    const ogImages: Record<string, string> = {
-      'holdem': '/assets/img/og/holdem_og.webp',
-    }
-    return ogImages[gameSlug] || '/assets/img/og/holdem_og.webp'
-  }
-
-  const ogImageUrl = site.url ? `${site.url}${getOgImage(slug)}` : getOgImage(slug)
+  const pageUrl = withSiteUrl(`/games/${game.slug}`)
+  const imageUrl = withSiteUrl(game.ogImage.src)
 
   return (
     <div className='sm:space-y-8'>
       <JsonLd
         data={{
           '@context': 'https://schema.org',
-          '@type': 'Game',
+          '@type': 'VideoGame',
           name: game.title,
           description: game.description,
-          url: `${site.url ? site.url : ''}/games/${game.slug}`,
-          image: ogImageUrl,
+          url: pageUrl,
+          image: imageUrl,
+          applicationCategory: 'GameApplication',
+          gamePlatform: 'Web browser',
+          offers: {
+            '@type': 'Offer',
+            price: '0',
+            priceCurrency: 'USD',
+          },
+        }}
+      />
+      <JsonLd
+        data={{
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: withSiteUrl('/') },
+            { '@type': 'ListItem', position: 2, name: 'Games', item: withSiteUrl('/games') },
+            { '@type': 'ListItem', position: 3, name: game.title, item: pageUrl },
+          ],
         }}
       />
 

@@ -63,8 +63,13 @@ Add an entry to [games/index.ts](../games/index.ts):
   title: '<Display Title>',
   description: 'One-sentence description used on cards and in metadata.',
   emoji: '🂡',
+  ogImage: { src: '/assets/img/og/<slug>_og.webp', width: 300, height: 200 },
+  updatedAt: 'YYYY-MM-DD',
 },
 ```
+
+`ogImage` width and height must be the file's real pixel size. `updatedAt` is the sitemap
+`lastModified` for this page — change it only when the page's content changes.
 
 This makes the game appear on the home page, `/games`, the sitemap, recommendations, and the global
 JSON-LD automatically.
@@ -80,24 +85,18 @@ In [app/games/[slug]/page.tsx](../app/games/[slug]/page.tsx):
 {game.slug === '<slug>' && <<Name> />}
 ```
 
-3. Add the OG image entry to the `getOgImage` map(s) in the same file.
+## 4. Add the OG image asset
 
-## 4. Add the OG image map entry in GameCard
-
-Add the same slug → image mapping in [components/GameCard.tsx](../components/GameCard.tsx)'s
-`getOgImage`. (The map is intentionally duplicated across these files — keep both in sync.)
-
-## 5. Add the OG image asset
-
-Drop a 1200×630 (or compatible) image at:
+Drop the image at:
 
 ```
 public/assets/img/og/<slug>_og.webp
 ```
 
-If omitted, the OG maps fall back to the holdem image.
+Put its path and real pixel size on the registry entry from step 2. `GameCard`, Open Graph tags,
+and JSON-LD all read `ogImage` from there.
 
-## 6. Persistence convention
+## 5. Persistence convention
 
 Store any progress in `localStorage` under a game-specific key prefix so games don't collide:
 
@@ -106,14 +105,14 @@ Store any progress in `localStorage` under a game-specific key prefix so games d
 
 Load saved state in a mount `useEffect`; write on change.
 
-## 7. SEO "How to Play" content
+## 6. SEO "How to Play" content
 
 Add a "How to Play" / rules section inside the game component (see the bottom of
 [games/highlow/HighLow.tsx](../games/highlow/HighLow.tsx) or
 [games/blackjack/BlackJack.tsx](../games/blackjack/BlackJack.tsx)). This gives each game page unique
 copy and avoids thin-content SEO penalties.
 
-## 8. Verify
+## 7. Verify
 
 - `npm test` passes (when the game has unit tests).
 - `npm run lint` passes.

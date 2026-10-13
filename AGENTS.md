@@ -51,10 +51,10 @@ A new game must be wired in several places, or it will 404 or be missing from SE
 
 1. `games/<slug>/` — the game component (`'use client'`) + CSS module.
 2. `games/index.ts` — add a `GameMeta` entry (`slug`, `title`, `description`, `emoji`).
-3. `app/games/[slug]/page.tsx` — import the component, add it to the slug switch, and add an
-   entry to the OG image map.
-4. `components/GameCard.tsx` — add an entry to its OG image map.
-5. `public/assets/img/og/<slug>_og.webp` — social/preview image.
+3. `app/games/[slug]/page.tsx` — import the component and add it to the slug switch.
+4. `public/assets/img/og/<slug>_og.webp` — social/preview image. Record its path and real
+   pixel size as `ogImage` on the `GameMeta` entry. `GameCard`, metadata, and JSON-LD read it
+   from the registry.
 
 `app/sitemap.ts`, the home page, `/games`, and `Recommendation` all read from `games/index.ts`
 automatically once the registry entry exists.
@@ -71,8 +71,7 @@ See [.cursor/skills/add-new-game/SKILL.md](.cursor/skills/add-new-game/SKILL.md)
   When unset (local dev), those fall back to relative/undefined values — set it in `.env.local`.
 - Secrets (`RESEND_API_KEY`, `EMAIL_FROM`, `CONTACT_TO`) live in `.env.local` and are read by
   `app/api/contact/route.ts`. Never commit them.
-- The OG image map is duplicated in `app/games/[slug]/page.tsx` and `components/GameCard.tsx`;
-  keep both in sync when adding games.
+- OG images live on `GameMeta.ogImage` (path plus real width and height). Don't add a second map.
 
 ## More docs
 

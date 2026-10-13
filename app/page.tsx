@@ -2,7 +2,9 @@ import GameCard from '@/components/GameCard'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { games } from '@/games/index'
-import { site } from '@/lib/site'
+import { site, withSiteUrl } from '@/lib/site'
+
+const og = (slug: string) => games.find((game) => game.slug === slug)!.ogImage
 
 export const metadata: Metadata = {
   title:
@@ -20,19 +22,15 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: site.url
-          ? `${site.url}/assets/img/og/holdem_og.webp`
-          : '/assets/img/og/holdem_og.webp',
-        width: 500,
-        height: 300,
+        url: withSiteUrl(og('holdem').src),
+        width: og('holdem').width,
+        height: og('holdem').height,
         alt: "Card Station - Play Texas Hold'em Free Online",
       },
       {
-        url: site.url
-          ? `${site.url}/assets/img/og/blackjack_og.webp`
-          : '/assets/img/og/blackjack_og.webp',
-        width: 500,
-        height: 300,
+        url: withSiteUrl(og('blackjack').src),
+        width: og('blackjack').width,
+        height: og('blackjack').height,
         alt: 'Card Station - Play Blackjack Free Online',
       },
     ],
@@ -43,11 +41,7 @@ export const metadata: Metadata = {
       "Play Free Online Card Games (Blackjack, Hold'em, Memory) — Card Station",
     description:
       "Instant, free & fun mini card games: Blackjack, Texas Hold'em vs Bot, Flip Card memory game, High Low & Snap. Mobile-friendly & no signup required.",
-    images: [
-      site.url
-        ? `${site.url}/assets/img/og/holdem_og.webp`
-        : '/assets/img/og/holdem_og.webp',
-    ],
+    images: [withSiteUrl(og('holdem').src)],
   },
 }
 
@@ -108,21 +102,21 @@ export default function HomePage() {
                 href='/games/holdem'
                 className='btn-shimmer aspect-[5/3] rounded-lg flex flex-row items-center justify-center gap-2 text-sm font-semibold text-white/90'
                 style={{
-                  background: `url('/assets/img/og/holdem_og.webp') center/cover no-repeat`,
+                  background: `url('${og('holdem').src}') center/cover no-repeat`,
                 }}
               ></Link>
               <Link
                 href='/games/flipcard'
                 className='btn-shimmer aspect-[5/3] rounded-lg flex flex-row items-center justify-center gap-2 text-sm font-semibold text-white/90'
                 style={{
-                  background: `url('/assets/img/og/flipcard_og.webp') center/cover no-repeat`,
+                  background: `url('${og('flipcard').src}') center/cover no-repeat`,
                 }}
               ></Link>
               <Link
                 href='/games/snap'
                 className='btn-shimmer aspect-[5/3] rounded-lg flex flex-row items-center justify-center gap-2 text-sm font-semibold text-white/90'
                 style={{
-                  background: `url('/assets/img/og/snap_og.webp') center/cover no-repeat`,
+                  background: `url('${og('snap').src}') center/cover no-repeat`,
                 }}
               ></Link>
             </div>

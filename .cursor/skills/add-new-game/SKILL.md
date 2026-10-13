@@ -3,7 +3,7 @@ name: add-new-game
 description: >-
   Scaffold and wire a new card game into the Card Station site. Use when the user asks to add a new
   game, create a card game, add a game to the site, or register a game under games/. Covers the game
-  component, the games/index.ts registry, the slug switch, OG image maps, and SEO assets.
+  component, the games/index.ts registry (including ogImage), the slug switch, and SEO assets.
 disable-model-invocation: true
 ---
 
@@ -20,13 +20,12 @@ no game render, or absence from listings/SEO.
 
 ```
 - [ ] 1. Create games/<slug>/<Name>.tsx + <name>.module.css (mobile-first, responsive)
-- [ ] 2. Register in games/index.ts (slug, title, description, emoji)
-- [ ] 3. Add import + slug switch case + OG map entry in app/games/[slug]/page.tsx
-- [ ] 4. Add OG map entry in components/GameCard.tsx
-- [ ] 5. Add public/assets/img/og/<slug>_og.webp
-- [ ] 6. Use a game-specific localStorage key prefix
-- [ ] 7. Add a "How to Play" SEO section in the component
-- [ ] 8. Verify: npm test (if applicable) + npm run lint + open /games/<slug> on desktop AND a mobile viewport
+- [ ] 2. Register in games/index.ts (slug, title, description, emoji, ogImage, updatedAt)
+- [ ] 3. Add import + slug switch case in app/games/[slug]/page.tsx
+- [ ] 4. Add public/assets/img/og/<slug>_og.webp and record its real size on ogImage
+- [ ] 5. Use a game-specific localStorage key prefix
+- [ ] 6. Add a "How to Play" SEO section in the component
+- [ ] 7. Verify: npm test (if applicable) + npm run lint + open /games/<slug> on desktop AND a mobile viewport
 ```
 
 ## Step 1: Create the component
@@ -57,35 +56,32 @@ Append a `GameMeta` entry. This alone makes the game show on the home page, `/ga
 recommendations, and global JSON-LD.
 
 ```ts
-{ slug: '<slug>', title: '<Title>', description: '<one sentence>', emoji: '🂡' },
+{ slug: '<slug>', title: '<Title>', description: '<one sentence>', emoji: '🂡', ogImage: { src: '/assets/img/og/<slug>_og.webp', width: 300, height: 200 }, updatedAt: 'YYYY-MM-DD' },
 ```
+
+`ogImage` width and height are the file's real pixel size. `updatedAt` is the sitemap date.
 
 ## Step 3: Wire the slug switch (app/games/[slug]/page.tsx)
 
 1. `import <Name> from '@/games/<slug>/<Name>'`
 2. Add to the switch: `{game.slug === '<slug>' && <<Name> />}`
-3. Add `'<slug>': '/assets/img/og/<slug>_og.webp'` to the `getOgImage` map(s) in this file.
 
-## Step 4: OG map in components/GameCard.tsx
+## Step 4: OG image asset
 
-Add the same `<slug>` → `/assets/img/og/<slug>_og.webp` entry. This map is duplicated on purpose —
-keep it in sync with step 3.
+Add `public/assets/img/og/<slug>_og.webp` and set `ogImage` on the registry entry to that path
+and the file's real width and height. Cards, Open Graph tags, and JSON-LD read it from there.
 
-## Step 5: OG image asset
-
-Add `public/assets/img/og/<slug>_og.webp` (~1200×630). Missing images fall back to the holdem image.
-
-## Step 6: Persistence
+## Step 5: Persistence
 
 Persist progress in `localStorage` with a game-specific prefix to avoid collisions (e.g. `bj_*`,
 `highlow-best-streak`). Load in a mount `useEffect`, save on change.
 
-## Step 7: SEO content
+## Step 6: SEO content
 
 Add a "How to Play" / rules section inside the component (see the bottom of `BlackJack.tsx` or
 `HighLow.tsx`) so the page has unique copy.
 
-## Step 8: Verify
+## Step 7: Verify
 
 - `npm test` passes (when the game has unit tests).
 - `npm run lint` passes.
