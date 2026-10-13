@@ -219,7 +219,7 @@ export default function HighLow() {
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.4, delay: 0.1 }}
       >
-        <motion.h1
+        <motion.h2
           className={styles.gameTitle}
           variants={scoreVariants}
           animate={
@@ -231,7 +231,7 @@ export default function HighLow() {
           }
         >
           High Low Card Game
-        </motion.h1>
+        </motion.h2>
 
         {/* Score Display */}
         <motion.div

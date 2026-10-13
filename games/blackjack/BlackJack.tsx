@@ -67,7 +67,7 @@ export default function BlackJack() {
           resetChips={actions.resetChips}
         />
 
-        <h1 className={styles.gameTitle}>Blackjack 1v1</h1>
+        <h2 className={styles.gameTitle}>Blackjack 1v1</h2>
 
         <div className='flex flex-col items-center m-2 sm:m-4 min-h-[300px] sm:min-h-[360px]'>
           <DealerHand

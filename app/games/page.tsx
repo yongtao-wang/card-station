@@ -54,7 +54,7 @@ export default function GamesPage() {
         <h1 className='text-3xl md:text-4xl font-extrabold tracking-tight'>
           All Card Games
         </h1>
-        <p className='text-slate-600 max-w-2xl mx-auto'>
+        <p className='text-slate-300 max-w-2xl mx-auto'>
           Choose from our collection of free online card and memory games. All
           games are instant play, mobile-friendly, and require no signup or
           downloads. Card Station is community-driven and focused on casual play, offering a fun, friendly environment without any casino or gambling emphasis.
@@ -114,29 +114,29 @@ export default function GamesPage() {
       <section className='text-center space-y-4'>
         <h2 className='text-xl font-bold'>Game Types</h2>
         <div className='flex flex-wrap justify-center gap-3'>
-          <span className='px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium'>
+          <span className='px-3 py-1 bg-white/10 text-slate-200 rounded-full text-sm font-medium ring-1 ring-white/15'>
             Strategy Games
           </span>
-          <span className='px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium'>
+          <span className='px-3 py-1 bg-white/10 text-slate-200 rounded-full text-sm font-medium ring-1 ring-white/15'>
             Memory Games
           </span>
-          <span className='px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium'>
+          <span className='px-3 py-1 bg-white/10 text-slate-200 rounded-full text-sm font-medium ring-1 ring-white/15'>
             Card Games
           </span>
-          <span className='px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm font-medium'>
+          <span className='px-3 py-1 bg-white/10 text-slate-200 rounded-full text-sm font-medium ring-1 ring-white/15'>
             Reaction Games
           </span>
         </div>
-        <p className='text-slate-600 text-sm max-w-lg mx-auto'>
+        <p className='text-slate-300 text-sm max-w-lg mx-auto'>
           Each game offers a unique challenge and entertainment value. From
           quick reflex games to deep strategy, there's something for every type
           of player.
         </p>
       </section>
 
-      <section className='bg-slate-100 rounded-2xl p-6 md:p-8 space-y-4 text-center'>
-        <h2 className='text-xl font-bold'>About Card Station</h2>
-        <p className='text-slate-700 max-w-3xl mx-auto text-sm'>
+      <section className='bg-slate-700/50 rounded-2xl p-6 md:p-8 space-y-4 text-center'>
+        <h2 className='text-xl font-bold text-slate-300'>About Card Station</h2>
+        <p className='text-slate-300 max-w-3xl mx-auto text-sm'>
           Card Station is dedicated to providing a unique, community-driven platform for free online card and memory games. Our mission is to offer casual, fun, and accessible gameplay experiences without any casino or gambling focus, making it the perfect place for players of all ages to enjoy and improve their skills.
         </p>
       </section>

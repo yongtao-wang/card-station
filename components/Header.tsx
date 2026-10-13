@@ -7,7 +7,7 @@ export default function Header() {
       <div className='mx-auto max-w-6xl px-4 h-14 flex items-center justify-between bg-transparent backdrop-blur'>
         <Link
           href='/'
-          className='font-extrabold text-lg md:text-xl text-white hover:opacity-90 inline-flex items-center gap-2'
+          className='shrink-0 font-extrabold text-lg md:text-xl text-white hover:opacity-90 inline-flex items-center gap-2 whitespace-nowrap'
         >
           <span className='inline-grid place-items-center h-10 w-10 rounded-full bg-gradient-to-br from-fuchsia-500 to-indigo-500 text-white'>
             <Image
@@ -17,11 +17,14 @@ export default function Header() {
               height={32}
             />
           </span>
-          <span>Card Station</span>
+          <span className='hidden min-[380px]:inline'>Card Station</span>
         </Link>
-        <nav className='flex items-center gap-4 text-sm'>
+        <nav className='flex items-center gap-2 sm:gap-4 text-xs sm:text-sm'>
           <Link href='/' className='text-slate-200 hover:text-white'>
             HOME
+          </Link>
+          <Link href='/games' className='text-slate-200 hover:text-white'>
+            GAMES
           </Link>
           <Link href='/about' className='text-slate-200 hover:text-white'>
             ABOUT

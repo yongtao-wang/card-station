@@ -100,6 +100,7 @@ export default function HomePage() {
             <div className='mt-3 grid grid-cols-3 gap-3'>
               <Link
                 href='/games/holdem'
+                aria-label={games.find((game) => game.slug === 'holdem')!.title}
                 className='btn-shimmer aspect-[5/3] rounded-lg flex flex-row items-center justify-center gap-2 text-sm font-semibold text-white/90'
                 style={{
                   background: `url('${og('holdem').src}') center/cover no-repeat`,
@@ -107,6 +108,7 @@ export default function HomePage() {
               ></Link>
               <Link
                 href='/games/flipcard'
+                aria-label={games.find((game) => game.slug === 'flipcard')!.title}
                 className='btn-shimmer aspect-[5/3] rounded-lg flex flex-row items-center justify-center gap-2 text-sm font-semibold text-white/90'
                 style={{
                   background: `url('${og('flipcard').src}') center/cover no-repeat`,
@@ -114,6 +116,7 @@ export default function HomePage() {
               ></Link>
               <Link
                 href='/games/snap'
+                aria-label={games.find((game) => game.slug === 'snap')!.title}
                 className='btn-shimmer aspect-[5/3] rounded-lg flex flex-row items-center justify-center gap-2 text-sm font-semibold text-white/90'
                 style={{
                   background: `url('${og('snap').src}') center/cover no-repeat`,

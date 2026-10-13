@@ -310,7 +310,7 @@ export default function Snap() {
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.4, delay: 0.1 }}
       >
-        <h1 className={`${styles.gameTitle}`}>Snap!</h1>
+        <h2 className={`${styles.gameTitle}`}>Snap!</h2>
 
         {/* Game Info */}
         <div className='flex justify-between items-center m-2 mx-4 sm:mx-8'>

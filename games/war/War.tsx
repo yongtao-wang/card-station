@@ -657,9 +657,9 @@ export default function War() {
             )}
           </motion.div>
         ))}
-        <h1 className='text-2xl sm:text-3xl font-bold text-white text-center p-4 pb-8 sm:p-8 sm:pb-16'>
+        <h2 className='text-2xl sm:text-3xl font-bold text-white text-center p-4 pb-8 sm:p-8 sm:pb-16'>
           War
-        </h1>
+        </h2>
         <div className='w-[60%] mx-auto my-2 sm:my-8 flex flex-col items-center justify-center gap-20'>
           <div className='grid grid-cols-3 gap-12 justify-items-center items-center'>
             <div></div>

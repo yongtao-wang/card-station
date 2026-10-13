@@ -977,9 +977,9 @@ export default function Holdem() {
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.4, delay: 0.1 }}
       >
-        <h1 className='text-2xl sm:text-3xl font-bold text-white text-center p-4 sm:p-8'>
+        <h2 className='text-2xl sm:text-3xl font-bold text-white text-center p-4 sm:p-8'>
           Texas Hold&apos;em
-        </h1>
+        </h2>
         <div className={styles.stage}>
           {/* Hand log (desktop only) */}
           <div className={`${styles.panel} ${styles.handLog}`}>

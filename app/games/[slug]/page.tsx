@@ -91,7 +91,7 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
         }}
       />
 
-      <header className='hidden sm:flex items-center justify-between p-4 sm:px-0'>
+      <header className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 sm:px-0'>
         <div>
           <h1 className='text-2xl font-bold flex items-center gap-2'>
             {game.emoji} {game.title}

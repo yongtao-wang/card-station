@@ -33,15 +33,15 @@ Baseline, phases, and sequencing rules: [seo.md](seo.md).
 | [SEO-01](seo.md#seo-01) | Render JSON-LD as real `<script>` tags | High | S | P0 | Done |
 | [SEO-06](seo.md#seo-06) | Real `lastModified` dates in sitemap | Medium | S | P1 | Done |
 | [SEO-08](seo.md#seo-08) | Move OG image map into the game registry | Medium | S | P1 | Done |
-| [SEO-09](seo.md#seo-09) | One visible `<h1>` per game page | Medium | S | P1 | Todo |
+| [SEO-09](seo.md#seo-09) | One visible `<h1>` per game page | Medium | S | P1 | Done |
 | [SEO-02](seo.md#seo-02) | Fix broken `/games/texas-holdem` link | Low | S | P2 | Done |
 | [SEO-03](seo.md#seo-03) | Remove fake `SearchAction` from WebSite JSON-LD | Low | S | P2 | Done |
 | [SEO-04](seo.md#seo-04) | Remove doubled brand in page titles | Low | S | P2 | Done |
 | [SEO-05](seo.md#seo-05) | Fix nested links on `/games` | Low | S | P2 | Done |
 | [SEO-07](seo.md#seo-07) | Richer structured data: VideoGame, BreadcrumbList, Organization | Medium | M | P2 | Done |
-| [SEO-10](seo.md#seo-10) | Internal links: nav, footer, "Now Trending" tiles | Low | S | P2 | Todo |
-| [SEO-11](seo.md#seo-11) | Fix low-contrast text on `/games` and 404 | Low | S | P2 | Todo |
-| [SEO-12](seo.md#seo-12) | Web manifest + apple-touch-icon | Low | S | P2 | Todo |
+| [SEO-10](seo.md#seo-10) | Internal links: nav, footer, "Now Trending" tiles | Low | S | P2 | Done |
+| [SEO-11](seo.md#seo-11) | Fix low-contrast text on `/games` and 404 | Low | S | P2 | Done |
+| [SEO-12](seo.md#seo-12) | Web manifest + apple-touch-icon | Low | S | P2 | Done |
 | [SEO-13](seo.md#seo-13) | Fix domain in AGENTS.md | Low | S | P2 | Done |
 | [SEO-26](seo.md#seo-26) | Guard against duplicate game descriptions | Low | S | P2 | Done |
 

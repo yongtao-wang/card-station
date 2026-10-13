@@ -355,6 +355,7 @@ Rules for this phase:
 - **Impact rationale:** The H1 is a primary on-page signal and Google indexes the mobile version.
 - **Effort rationale:** agent ~30 min across 5 files.
 - **Done when:** each game page has exactly one `<h1>`, visible at mobile and desktop widths.
+- **Outcome (2026-10-13):** The page header is visible at every width. In-game titles in Blackjack, Snap, Hold'em, War, and High Low are `<h2>`. On a phone the header stacks so the title and "All Games" link don't sit on one row.
 
 <a id="seo-10"></a>
 ### SEO-10 — Internal links
@@ -367,6 +368,7 @@ Rules for this phase:
 - **Impact rationale:** Small site with few pages; every game is already linked from home.
 - **Effort rationale:** agent ~30 min.
 - **Done when:** nav, footer, and tiles render with anchor text.
+- **Outcome (2026-10-13):** Header nav includes Games. Below 380px the wordmark hides so the four links fit; the logo stays. The footer lists every game from the registry. The home "Now Trending" tiles have `aria-label`s.
 
 <a id="seo-11"></a>
 ### SEO-11 — Low-contrast text
@@ -380,6 +382,7 @@ Rules for this phase:
 - **Impact rationale:** Accessibility and Lighthouse score; minor SEO effect.
 - **Effort rationale:** agent ~20 min.
 - **Done when:** text passes WCAG AA contrast on both pages.
+- **Outcome (2026-10-13):** `/games` and the 404 page use `text-slate-300` on the dark background. The light "About Card Station" panel and the pale category chips on `/games` now match the other dark panels.
 
 <a id="seo-12"></a>
 ### SEO-12 — Web manifest + apple-touch-icon
@@ -391,6 +394,7 @@ Rules for this phase:
 - **Impact rationale:** Polish for home-screen installs; negligible ranking effect.
 - **Effort rationale:** agent ~15 min.
 - **Done when:** `/manifest.webmanifest` serves and the touch icon is in `<head>`.
+- **Outcome (2026-10-13):** `app/manifest.ts` serves the manifest. Root metadata points `apple` at the existing touch icon.
 
 <a id="seo-13"></a>
 ### SEO-13 — Fix domain in AGENTS.md

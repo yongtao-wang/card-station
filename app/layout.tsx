@@ -41,7 +41,10 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  icons: [{ rel: 'icon', url: '/favicon.ico' }],
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/assets/icons/apple-touch-icon.png',
+  },
   alternates: {
     canonical: site.url || undefined,
   },

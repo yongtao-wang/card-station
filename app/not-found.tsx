@@ -15,7 +15,7 @@ export default function NotFound() {
     <div className='space-y-8 py-12 text-center'>
       <div className='space-y-4'>
         <h1 className='text-4xl font-bold'>Page Not Found</h1>
-        <p className='text-slate-600 max-w-md mx-auto'>
+        <p className='text-slate-300 max-w-md mx-auto'>
           The page you're looking for doesn't exist. Try one of our popular card
           games instead:
         </p>
@@ -30,7 +30,7 @@ export default function NotFound() {
           >
             <div className='text-3xl mb-2'>{game.emoji}</div>
             <div className='font-bold text-lg'>{game.title}</div>
-            <p className='text-slate-600 text-sm'>{game.description}</p>
+            <p className='text-slate-300 text-sm'>{game.description}</p>
           </Link>
         ))}
       </div>
