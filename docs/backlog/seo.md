@@ -106,9 +106,11 @@ Desktop: avg position 31; mobile: 20.
 **Automation:** Full · **Impact:** Low · **Effort:** S · **Priority:** P2
 
 - **Problem:** Root `title.template` appends `| Card Station`, so live titles read
-  "Contact Us — Card Station | Card Station" and "About Card Station — Free Online Card Games | Card Station".
-- **Where:** `app/about/page.tsx:5`, `app/contact/page.tsx:7` (and its OG/Twitter titles).
-- **Fix:** Drop the brand from page-level titles.
+  "Contact Us — Card Station | Card Station", "About Card Station — Free Online Card Games | Card Station",
+  and (404) "Page Not Found — Card Station | Card Station".
+- **Where:** `app/about/page.tsx:5`, `app/contact/page.tsx:7`, `app/not-found.tsx:7`.
+- **Fix:** Drop the brand from page-level `title` only. OG/Twitter titles don't use the template, so
+  they aren't doubled — keep the brand there.
 - **Human input:** None.
 - **Impact rationale:** About/contact get ~30 visitors/30d combined; cosmetic in SERPs.
 - **Effort rationale:** agent ~5 min.
@@ -154,8 +156,9 @@ Desktop: avg position 31; mobile: 20.
   - `BreadcrumbList` on game pages: Home › Games › <Game>.
   - `Organization` (name "Card Station", `url`, `logo`) in the root layout.
 - **Human input:** None.
-- **Impact rationale:** Can earn breadcrumb display in results and help brand recognition; rich
-  results for games aren't guaranteed, so Medium.
+- **Impact rationale:** Can earn breadcrumb display in results and help brand recognition. Google has
+  no `VideoGame` rich result, and its `SoftwareApplication` rich result requires `aggregateRating` or
+  `review` — which we don't have and must not fake — so expect no game rich results. Medium.
 - **Effort rationale:** agent ~1–2h including validation.
 - **Depends on:** SEO-01, SEO-08.
 - **Done when:** Schema validator shows no errors on `/`, `/games`, and one game page.
@@ -166,7 +169,7 @@ Desktop: avg position 31; mobile: 20.
 **Automation:** Full · **Impact:** Medium · **Effort:** S · **Priority:** P1
 
 - **Problem:** The OG image map is duplicated (`app/games/[slug]/page.tsx` ×2, `components/GameCard.tsx`,
-  `app/games/page.tsx`), and two copies only contain `holdem`, so every game's JSON-LD `image` points
+  `app/games/page.tsx`; `app/page.tsx` also hardcodes paths for its OG tags and "Now Trending" tiles), and two copies only contain `holdem`, so every game's JSON-LD `image` points
   to the Hold'em image. Declared OG dimensions (1200×630) don't match the files (300×180 – 500×300).
 - **Fix:** Add `ogImage` (with real `width`/`height`) to `GameMeta`; read it everywhere. Update the
   touch-points in `AGENTS.md` and `docs/adding-a-game.md`.
@@ -185,8 +188,9 @@ Desktop: avg position 31; mobile: 20.
   schedule.
 - **Fix:** Generate a key, add `public/<key>.txt`, and add a script (e.g. `npm run indexnow`) that
   POSTs the sitemap URLs to `https://api.indexnow.org/indexnow`.
-- **Human input:** Decide how the ping runs — manually after deploy, or a Vercel deploy hook /
-  GitHub Action (you may need to add a secret or hook in the dashboard).
+- **Human input:** Decide how the ping runs — manually after deploy, or a GitHub Action on the
+  `deployment_status` event (Vercel deploy hooks only *trigger* builds; they can't run a post-deploy
+  step). Submit only URLs whose `lastmod` changed (needs SEO-06) — IndexNow is for changed URLs.
 - **Impact rationale:** Bing, Yandex, Seznam, Naver pick up changes within hours; every later SEO
   change lands faster on the engine that sends ~400 visitors/30d.
 - **Effort rationale:** agent ~30 min; human ~10 min to choose and wire the trigger.
@@ -214,7 +218,9 @@ Desktop: avg position 31; mobile: 20.
 - **Problem:** `https://cardstation.games/` → `www` returns **307** (temporary). `http://cardstation.games/`
   takes two hops (308 → https apex → 307 → www).
 - **Fix:** Vercel → Project → Settings → Domains: set the apex to redirect to `www` with 308.
-- **Human input:** Dashboard change (agent can verify afterwards with `curl`).
+- **Human input:** Dashboard change (agent can verify afterwards with `curl`). The agent could also
+  set `redirectStatusCode: 308` via the Vercel project-domains API, but only with your go-ahead
+  (production change).
 - **Impact rationale:** Consolidates any signals pointing at the apex onto `www`; how many links use
   the apex is unknown, so Medium.
 - **Effort rationale:** human ~5 min.
@@ -240,6 +246,11 @@ Rules for this phase:
 - Keep URLs/slugs unchanged.
 - Ship one batch, wait 2–3 weeks, compare against the baseline (SEO-21), then ship the next.
 - Agent drafts titles, H1s, and descriptions from the query data; you approve before merge.
+- Don't ship on-page changes to a batch's pages during its measurement window: finish SEO-09 (H1s)
+  before batch A, and add SEO-18 content to a batch's pages only after that batch is measured.
+- Judge batches on impressions and average position per query, not clicks — War gets ~2 Google
+  visitors/30d, so click counts are noise.
+- Keep the rendered `<title>` (including the `| Card Station` suffix) around 60 characters.
 
 <a id="seo-15"></a>
 ### SEO-15 — Retarget batch A: War, High Low
@@ -302,7 +313,9 @@ Rules for this phase:
   (basic strategy chart), Flip Card.
 - **Human input:** Review copy for tone and accuracy.
 - **Impact rationale:** Content depth is the main lever for the page-2/3 pages; Blackjack and
-  Hold'em (~1,600 impressions combined) can't climb without it.
+  Hold'em (~1,600 impressions combined) can't climb without it. Since 2023 Google shows FAQ rich
+  results only for authoritative government/health sites, so `FAQPage` markup helps Bing and parsing
+  but won't add Google FAQ snippets — the value is the visible text.
 - **Effort rationale:** agent ~1h per game (6 games); human ~15 min review per game.
 - **Done when:** all six pages have the sections and valid `FAQPage` JSON-LD.
 
@@ -399,8 +412,9 @@ Rules for this phase:
 
 **Automation:** Partial · **Impact:** Low · **Effort:** S · **Priority:** P2
 
-- **Problem:** `app/about/page.tsx` mentions Framer Motion animations, drag-and-drop, and challenging
-  friends; `framer-motion` isn't a dependency and there's no multiplayer.
+- **Problem:** `app/about/page.tsx:18` says "play solo, challenge friends", but there's no
+  multiplayer. "Drag-and-drop controls" overstates it (only High Low has elastic card drag). The
+  Framer Motion claim is true — `motion` (Framer Motion's current package name) is used by every game.
 - **Fix:** Rewrite to describe the site accurately.
 - **Human input:** Confirm the facts (what you want said about the project and yourself).
 - **Impact rationale:** Trust signal; 16 visitors/30d.
