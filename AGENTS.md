@@ -73,6 +73,12 @@ See [.cursor/skills/add-new-game/SKILL.md](.cursor/skills/add-new-game/SKILL.md)
   `app/api/contact/route.ts`. Never commit them.
 - OG images live on `GameMeta.ogImage` (path plus real width and height). Don't add a second map.
 
+## Cursor Cloud specific instructions
+
+- Open the app at `http://localhost:3000`. Next.js 16 blocks client dev assets when the page host is `127.0.0.1` or any other non-localhost origin unless `allowedDevOrigins` is set in `next.config.mjs`. `npm run dev` listens on port 3000; `--hostname 0.0.0.0` is fine when the browser still uses `localhost`.
+- `npm run lint` fails immediately: Next.js 16 removed `next lint`, and this repo has no `eslint.config.*`. Verify with `npm test` and `npm run build` (the production build typechecks).
+- Games run without secrets. `RESEND_API_KEY` is only required to send the contact form.
+
 ## More docs
 
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — how rendering, the registry, game patterns, and SEO fit together.
