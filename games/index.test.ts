@@ -35,6 +35,22 @@ describe('game registry', () => {
     expect(unique.size).toBe(descriptions.length)
   })
 
+  it('gives every seo description a unique value', () => {
+    const descriptions = games
+      .map((game) => game.seoDescription)
+      .filter((description): description is string => description !== undefined)
+
+    expect(new Set(descriptions).size).toBe(descriptions.length)
+  })
+
+  it('keeps rendered seo titles within 60 characters', () => {
+    for (const game of games) {
+      if (!game.seoTitle) continue
+      const rendered = `${game.seoTitle} | Card Station`
+      expect(rendered.length).toBeLessThanOrEqual(60)
+    }
+  })
+
   it('records each game OG image at its real pixel size', () => {
     const srcs = games.map((game) => game.ogImage.src)
     expect(new Set(srcs).size).toBe(srcs.length)

@@ -19,8 +19,8 @@ export async function generateMetadata(
   const game = games.find(g => g.slug === slug)
   if (!game) return { title: 'Game Not Found' }
 
-  const title = `${game.title} — Play Free Online`
-  const description = `${game.description} Play it free on Card Station.`
+  const title = game.seoTitle ?? `${game.title} — Play Free Online`
+  const description = game.seoDescription ?? `${game.description} Play it free on Card Station.`
   const url = site.url ? `${site.url}/games/${game.slug}` : undefined
   const ogImage = withSiteUrl(game.ogImage.src)
 
